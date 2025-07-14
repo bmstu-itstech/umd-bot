@@ -4,7 +4,7 @@ use crate::domain::Error;
 use crate::domain::models::{Slot, TelegramID};
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Booking {
     time: DateTime<Utc>,
     by:   TelegramID,

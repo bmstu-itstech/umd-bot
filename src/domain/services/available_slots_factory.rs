@@ -37,7 +37,7 @@ where
         
         let available = slots
             .into_iter()
-            .filter(|slot| slot.available())
+            .filter(|slot| slot.is_available())
             .collect();
         
         Ok(available)

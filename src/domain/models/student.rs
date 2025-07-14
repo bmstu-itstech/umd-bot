@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use chrono::NaiveDate;
 
 use crate::domain::Error;
@@ -74,6 +75,12 @@ impl TelegramID {
     }
 }
 
+impl Display for TelegramID {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct TelegramUsername(String);
 
@@ -94,7 +101,7 @@ pub struct Student {
     full_name_lat: OnlyLatin,
     full_name_cyr: OnlyCyrillic,
     citizenship:   Citizenship,
-    arrival_data:  NaiveDate,
+    arrival_date:  NaiveDate,
 }
 
 impl Student {
@@ -104,9 +111,9 @@ impl Student {
         full_name_lat: OnlyLatin,
         full_name_cyr: OnlyCyrillic,
         citizenship: Citizenship,
-        arrival_data: NaiveDate,
+        arrival_date: NaiveDate,
     ) -> Self {
-        Self { id, username, full_name_lat, full_name_cyr, citizenship, arrival_data }
+        Self { id, username, full_name_lat, full_name_cyr, citizenship, arrival_date }
     }
     
     pub fn id(&self) -> &TelegramID {
@@ -130,7 +137,7 @@ impl Student {
     }
     
     pub fn arrival_data(&self) -> &NaiveDate {
-        &self.arrival_data
+        &self.arrival_date
     }
     
     pub fn set_full_name_lat(&mut self, full_name_lat: OnlyLatin) {
@@ -146,7 +153,7 @@ impl Student {
     }
     
     pub fn set_arrival_data(&mut self, arrival_data: NaiveDate) {
-        self.arrival_data = arrival_data;
+        self.arrival_date = arrival_data;
     }
 }
 

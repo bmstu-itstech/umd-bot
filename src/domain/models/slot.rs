@@ -1,7 +1,7 @@
 use chrono::Utc;
 
 use crate::domain::Error;
-use crate::domain::models::{Interval, TelegramID};
+use crate::domain::models::{Booking, Interval, TelegramID};
 
 
 #[derive(Debug, Clone, PartialEq)]
@@ -26,19 +26,23 @@ impl<const N: usize> Slot<N> {
         })
     }
     
-    pub fn book(&mut self, id: TelegramID) -> Result<(), Error> {
+    pub fn book(&mut self, id: TelegramID) -> Result<Booking, Error> {
         if self.booked_by.len() >= N {
             return Err(Error::MaxCapacityExceeded(N))
         }
         self.booked_by.push(id);
-        Ok(())
+        Ok(Booking::new(self.interval.start().clone(), id))
     }
     
     pub fn interval(&self) -> &Interval<Utc> {
         &self.interval
     }
     
-    pub fn available(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
+        self.booked_by.is_empty()
+    }
+    
+    pub fn is_available(&self) -> bool {
         self.booked_by.len() < N
     }
     
@@ -74,7 +78,7 @@ mod slot_tests {
         let slot = Slot::<3>::empty(interval.clone());
 
         // THEN слот должен быть доступным
-        assert!(slot.available());
+        assert!(slot.is_available());
 
         // THEN слот имеет заданный интервал
         assert_eq!(slot.interval(), &interval);
@@ -94,7 +98,7 @@ mod slot_tests {
         assert_eq!(slot.booked_by(), users);
 
         // THEN слот всё ещё доступен
-        assert!(slot.available());
+        assert!(slot.is_available());
     }
 
     #[test]
@@ -131,7 +135,7 @@ mod slot_tests {
         assert_eq!(slot.booked_by().len(), 1);
 
         // Слот всё ещё доступен
-        assert!(slot.available());
+        assert!(slot.is_available());
     }
 
     #[test]
