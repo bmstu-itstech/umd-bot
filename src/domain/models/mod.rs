@@ -1,13 +1,9 @@
-mod student;
+mod user;
 mod citizenship;
 mod slot;
-mod interval;
-mod booking;
-mod naive_time_interval;
+mod closed_range;
 
-pub use student::*;
+pub use user::*;
 pub use citizenship::*;
 pub use slot::*;
-pub use interval::*;
-pub use booking::*;
-pub use naive_time_interval::*;
+pub use closed_range::*;

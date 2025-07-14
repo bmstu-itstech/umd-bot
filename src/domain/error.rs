@@ -15,10 +15,13 @@ pub enum Error {
     MaxCapacityExceeded(usize),
     
     #[error("student already exists: {0}")]
-    StudentAlreadyExists(TelegramID),
+    UserAlreadyExists(TelegramID),
     
     #[error("student not found: {0}")]
-    StudentNotFoundError(TelegramID),
+    UserNotFound(TelegramID),
+    
+    #[error("user has not reserved slot: {0}")]
+    UserNotReserved(TelegramID),
     
     #[error("slot not found")]
     SlotNotFoundError,

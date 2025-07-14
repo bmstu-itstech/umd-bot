@@ -1,13 +1,10 @@
 mod dto;
+mod days_with_free_slots;
+mod free_slots;
 mod check_deadline;
-mod available_days;
-mod available_slots;
-mod book;
-mod cancel_booking;
-mod register_student;
+mod reserve_slot;
+mod register_user;
+mod slots;
+mod cancel_reservation;
 
 pub use dto::*;
-pub use check_deadline::*;
-pub use available_days::*;
-pub use available_slots::*;
-pub use book::*;

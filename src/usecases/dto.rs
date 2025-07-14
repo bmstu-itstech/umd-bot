@@ -1,5 +1,7 @@
 use chrono::{DateTime, NaiveDate, Utc};
+
 use crate::domain::models;
+
 
 #[derive(Clone, Debug)]
 pub enum Citizenship {
@@ -14,7 +16,7 @@ pub enum Citizenship {
 }
 
 #[derive(Clone, Debug)]
-pub struct Student {
+pub struct User {
     pub id:            i64,
     pub username:      String,
     pub full_name_lat: String,
@@ -24,16 +26,16 @@ pub struct Student {
 }
 
 #[derive(Clone, Debug)]
-pub struct EmptySlot {
+pub struct FreeSlot {
     pub start: DateTime<Utc>,
     pub end:   DateTime<Utc>,
 }
 
 #[derive(Clone, Debug)]
-pub struct BookedSlot {
-    pub start:     DateTime<Utc>,
-    pub end:       DateTime<Utc>,
-    pub booked_by: Vec<Student>,
+pub struct Slot {
+    pub start:       DateTime<Utc>,
+    pub end:         DateTime<Utc>,
+    pub reserved_by: Vec<User>,
 }
 
 impl Into<String> for Citizenship {
@@ -92,6 +94,29 @@ impl From<models::Citizenship> for Citizenship {
             models::Citizenship::Belarus    => Citizenship::Belarus,
             models::Citizenship::Ukraine    => Citizenship::Ukraine,
             models::Citizenship::Other(s) => Citizenship::Other(s.into()),
+        }
+    }
+}
+
+impl From<models::User> for User {
+    fn from(user: models::User) -> Self {
+        Self {
+            id:            user.id().as_i64(),
+            username:      user.username().as_str().to_string(),
+            full_name_lat: user.full_name_lat().as_str().to_string(),
+            full_name_cyr: user.full_name_cyr().as_str().to_string(),
+            citizenship:   user.citizenship().clone().into(),
+            arrival_date:  user.arrival_data().clone(),
+        }
+    }
+}
+
+impl<const N: usize> From<models::Slot<N>> for Slot {
+    fn from(slot: models::Slot<N>) -> Self {
+        Self {
+            start:       slot.interval().start,
+            end:         slot.interval().end,
+            reserved_by: slot.reserved_by().iter().map(|user| user.clone().into()).collect(),
         }
     }
 }

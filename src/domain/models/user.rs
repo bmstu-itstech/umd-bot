@@ -5,7 +5,7 @@ use crate::domain::Error;
 use crate::domain::models::Citizenship;
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct OnlyLatin(String);
 
 impl OnlyLatin {
@@ -43,7 +43,7 @@ impl CyrillicCheck for char {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct OnlyCyrillic(String);
 
 impl OnlyCyrillic {
@@ -59,6 +59,10 @@ impl OnlyCyrillic {
         let s = s.into();
         Self::check(&s)?;
         Ok(Self(s))
+    }
+    
+    pub fn as_str(&self) -> &str {
+        &self.0
     }
 }
 
@@ -81,7 +85,7 @@ impl Display for TelegramID {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TelegramUsername(String);
 
 impl TelegramUsername {
@@ -94,8 +98,8 @@ impl TelegramUsername {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct Student {
+#[derive(Debug, Clone, PartialEq)]
+pub struct User {
     id:            TelegramID,   
     username:      TelegramUsername,
     full_name_lat: OnlyLatin,
@@ -104,7 +108,7 @@ pub struct Student {
     arrival_date:  NaiveDate,
 }
 
-impl Student {
+impl User {
     pub fn new(
         id: TelegramID,
         username: TelegramUsername,
