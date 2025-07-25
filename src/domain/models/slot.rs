@@ -53,6 +53,10 @@ impl<const N: usize> Slot<N> {
         &self.interval
     }
     
+    pub fn start(&self) -> DateTime<Utc> {
+        self.interval.start
+    }
+    
     pub fn is_empty(&self) -> bool {
         self.reserved_by.is_empty()
     }

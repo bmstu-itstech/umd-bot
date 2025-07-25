@@ -31,7 +31,7 @@ where
         
         let today = Utc::now().date_naive();
         let deadline = student
-            .arrival_data()
+            .arrival_date()
             .checked_add_days(self.deadline_policy.deadline(student.citizenship()))
             .unwrap();
         

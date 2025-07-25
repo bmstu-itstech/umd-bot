@@ -100,7 +100,7 @@ impl TelegramUsername {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct User {
-    id:            TelegramID,   
+    id:            TelegramID,
     username:      TelegramUsername,
     full_name_lat: OnlyLatin,
     full_name_cyr: OnlyCyrillic,
@@ -140,7 +140,7 @@ impl User {
         &self.citizenship
     }
     
-    pub fn arrival_data(&self) -> &NaiveDate {
+    pub fn arrival_date(&self) -> &NaiveDate {
         &self.arrival_date
     }
     

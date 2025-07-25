@@ -1,0 +1,4 @@
+DROP TABLE IF EXISTS reservations;
+DROP TABLE IF EXISTS slots;
+DROP TABLE IF EXISTS users;
+DROP TYPE IF EXISTS  citizenship;

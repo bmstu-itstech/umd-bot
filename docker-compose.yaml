@@ -1,0 +1,50 @@
+services:
+  bot:
+    container_name: umd-bot
+    build: .
+    env_file: .env.docker
+    environment:
+      DATABASE_URI: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+    depends_on:
+      - db
+    networks:
+      - web-umd
+
+  db:
+    image: postgres:15.3-alpine3.18
+    container_name: umd-db
+    command: postgres
+    ports:
+      - "${POSTGRES_PORT_EXT:-5432}:5432"
+    env_file: .env
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB" ]
+      interval: 5s
+      retries: 5
+      start_period: 10s
+      timeout: 10s
+    networks:
+      web-umd:
+        aliases:
+          - db
+    volumes:
+      - ${POSTGRES_VOLUME:-./.pgdata}:/var/lib/postgresql/data
+
+  migrate:
+    image: migrate/migrate
+    container_name: umd-migrate
+    networks:
+      - web-umd
+    volumes:
+      - ./migrations:/migrations
+    env_file: .env
+    environment:
+      DATABASE_URI: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+    command: [ "-path", "/migrations", "-database", "$DATABASE_URI", "up" ]
+    depends_on:
+      db:
+        condition: service_healthy
+
+networks:
+  web-umd:
+    driver: bridge

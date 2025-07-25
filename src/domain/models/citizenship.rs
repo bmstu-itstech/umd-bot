@@ -9,5 +9,3 @@ pub enum Citizenship {
     Ukraine,
     Other(String),
 }
-
-

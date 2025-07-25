@@ -50,7 +50,7 @@ where
             let slots = self.working_hours_policy
                 .generate_slots(date, self.duration)?;
             
-            if provider.has_available_slots(date, &slots).await? {
+            if provider.has_available_slots(&slots).await? {
                 result.push(date);
             }
         }

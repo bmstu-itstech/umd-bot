@@ -24,7 +24,7 @@ where
     pub async fn free_slots(&self, date: NaiveDate) -> Result<Vec<FreeSlot>, Error> {
         let provider = self.provider.lock().unwrap();
         let slots = self.policy.generate_slots(date, self.duration)?;
-        let slots = provider.available_slots(date, slots).await?;
+        let slots = provider.available_slots(slots).await?;
         Ok(
             slots
                 .into_iter()

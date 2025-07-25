@@ -28,11 +28,7 @@ impl<const N: usize> CancelReservationUseCase<N> {
         
         slot.cancel(&user)?;
         
-        if slot.is_empty() {
-            repos.delete(&slot).await?;
-        } else {
-            repos.save(&slot).await?;
-        }
+        repos.save_slot(&slot).await?;
         
         Ok(())
     }

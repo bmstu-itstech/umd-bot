@@ -27,7 +27,7 @@ impl RegisterUserUseCase {
         );
 
         let repos = self.repos.lock().unwrap();
-        repos.save(&user)
+        repos.save_user(&user)
             .await?;
         
         Ok(())

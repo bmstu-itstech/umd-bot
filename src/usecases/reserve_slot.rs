@@ -43,7 +43,7 @@ where
         
         let date = time.date_naive();
         let slots = self.policy.generate_slots(date, self.duration)?;
-        let mut slots = provider.available_slots(date, slots).await?;
+        let mut slots = provider.available_slots(slots).await?;
         let res = slots
             .iter_mut()
             .find(|slot| slot.interval().start == time);
@@ -54,7 +54,7 @@ where
         };
         
         slot.reserve(&user)?;
-        repos.save(slot).await?;
+        repos.save_slot(slot).await?;
         Ok(())
     }
 }

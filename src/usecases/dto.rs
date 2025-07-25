@@ -106,7 +106,7 @@ impl From<models::User> for User {
             full_name_lat: user.full_name_lat().as_str().to_string(),
             full_name_cyr: user.full_name_cyr().as_str().to_string(),
             citizenship:   user.citizenship().clone().into(),
-            arrival_date:  user.arrival_data().clone(),
+            arrival_date:  user.arrival_date().clone(),
         }
     }
 }
