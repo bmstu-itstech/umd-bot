@@ -1,7 +1,7 @@
 mod error;
 
-pub mod models;
 pub mod interfaces;
+pub mod models;
 pub mod services;
 
 pub use error::*;

@@ -4,7 +4,6 @@ use deadpool_postgres::{Manager, ManagerConfig, Pool, RecyclingMethod};
 use thiserror::Error;
 use tokio_postgres::{Config, NoTls};
 
-
 #[derive(Error, Debug)]
 pub enum ConnectionError {
     #[error("database error: {0}")]
@@ -21,9 +20,7 @@ pub fn connect(uri: &str) -> Result<Pool, ConnectionError> {
     };
 
     let manager = Manager::from_config(config, NoTls, manager);
-    let pool = Pool::builder(manager)
-        .max_size(16)
-        .build()?;
-    
+    let pool = Pool::builder(manager).max_size(16).build()?;
+
     Ok(pool)
 }

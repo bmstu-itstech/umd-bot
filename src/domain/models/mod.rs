@@ -1,9 +1,9 @@
-mod user;
 mod citizenship;
-mod slot;
 mod closed_range;
+mod slot;
+mod user;
 
-pub use user::*;
 pub use citizenship::*;
-pub use slot::*;
 pub use closed_range::*;
+pub use slot::*;
+pub use user::*;

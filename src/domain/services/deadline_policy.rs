@@ -2,7 +2,6 @@ use chrono::Days;
 
 use crate::domain::models::Citizenship;
 
-
 /// DeadlinePolicy описывает сроки подачи основных документов для иностранцев.
 pub trait DeadlinePolicy {
     fn deadline(&self, citizenship: &Citizenship) -> Days;
@@ -19,15 +18,13 @@ pub struct StandardDeadlinePolicy;
 impl DeadlinePolicy for StandardDeadlinePolicy {
     fn deadline(&self, citizenship: &Citizenship) -> Days {
         match citizenship {
-            Citizenship::Tajikistan
-            | Citizenship::Uzbekistan => Days::new(15),
+            Citizenship::Tajikistan | Citizenship::Uzbekistan => Days::new(15),
 
-            Citizenship::Kazakhstan
-            | Citizenship::Kyrgyzstan
-            | Citizenship::Armenia => Days::new(30),
+            Citizenship::Kazakhstan | Citizenship::Kyrgyzstan | Citizenship::Armenia => {
+                Days::new(30)
+            }
 
-            Citizenship::Belarus
-            | Citizenship::Ukraine => Days::new(90),
+            Citizenship::Belarus | Citizenship::Ukraine => Days::new(90),
 
             Citizenship::Other(_) => Days::new(7),
         }
@@ -38,16 +35,16 @@ impl DeadlinePolicy for StandardDeadlinePolicy {
 mod default_deadline_policy_tests {
     use super::*;
     use crate::domain::services::Mon2FriWorkingHoursPolicy;
-    
+
     fn setup_default_working_policy() -> Mon2FriWorkingHoursPolicy {
         Mon2FriWorkingHoursPolicy::default()
     }
- 
+
     #[test]
     fn test_deadlines() {
         // GIVEN стандартная политика сроков
         let policy = StandardDeadlinePolicy::default();
-        
+
         // (WHEN гражданство, THEN ожидаемое количество дней)
         let cases = vec![
             (Citizenship::Tajikistan, 15),
@@ -59,7 +56,7 @@ mod default_deadline_policy_tests {
             (Citizenship::Ukraine, 90),
             (Citizenship::Other("China".to_string()), 7),
         ];
-        
+
         cases.into_iter().for_each(|(citizenship, days)| {
             assert_eq!(policy.deadline(&citizenship), Days::new(days));
         })

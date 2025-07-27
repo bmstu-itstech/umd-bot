@@ -1,20 +1,20 @@
-use std::sync::{Arc, Mutex};
 use chrono::Duration;
 use chrono::NaiveDate;
+use std::sync::{Arc, Mutex};
 
 use crate::domain::Error;
 use crate::domain::interfaces::AvailableSlotsProvider;
 use crate::domain::services::WorkingHoursPolicy;
 use crate::usecases::FreeSlot;
 
-
+#[derive(Clone)]
 pub struct FreeSlotsUseCase<const N: usize, WP>
 where
     WP: WorkingHoursPolicy,
 {
     duration: Duration,
     policy: WP,
-    provider: Arc<Mutex<dyn AvailableSlotsProvider<N>>>
+    provider: Arc<Mutex<dyn AvailableSlotsProvider<N>>>,
 }
 
 impl<const N: usize, WP> FreeSlotsUseCase<N, WP>
@@ -25,14 +25,12 @@ where
         let provider = self.provider.lock().unwrap();
         let slots = self.policy.generate_slots(date, self.duration)?;
         let slots = provider.available_slots(slots).await?;
-        Ok(
-            slots
-                .into_iter()
-                .map(|slot| FreeSlot{
-                    start: slot.interval().start,
-                    end:   slot.interval().end,
-                })
-                .collect()
-        )
+        Ok(slots
+            .into_iter()
+            .map(|slot| FreeSlot {
+                start: slot.interval().start,
+                end: slot.interval().end,
+            })
+            .collect())
     }
 }

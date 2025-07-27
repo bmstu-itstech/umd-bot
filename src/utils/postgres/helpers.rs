@@ -1,6 +1,5 @@
-use tokio_postgres::error::{SqlState};
 use tokio_postgres::Error as PgError;
-
+use tokio_postgres::error::SqlState;
 
 pub fn is_unique_violation(error: &PgError) -> bool {
     error
