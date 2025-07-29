@@ -42,19 +42,21 @@ impl PostgresRepository {
 }
 
 #[async_trait]
-impl<const N: usize> HasAvailableSlotsProvider<N> for PostgresRepository {
-    async fn has_available_slots(&self, slots: &[Slot<N>]) -> Result<bool, Error> {
+impl HasAvailableSlotsProvider for PostgresRepository {
+    async fn has_available_slots(&self, slots: &[Slot]) -> Result<bool, Error> {
         let starts: Vec<_> = slots.iter().map(|slot| slot.start()).collect();
-        let n = N as i64;
+        // Плохо? Плохо, но раньше слоты имели фиксированный размер, указанный в шаблоне,
+        // а переписать репозиторий под слоты произвольного размера не имею времени.
+        let max_size = slots.first().unwrap().max_size() as i64;
         with_client!(self.pool, async |client: &Client| {
-            has_available_slots(client, &starts, n).await
+            has_available_slots(client, &starts, max_size).await
         })
     }
 }
 
 #[async_trait]
-impl<const N: usize> AvailableSlotsProvider<N> for PostgresRepository {
-    async fn available_slots(&self, slots: Vec<Slot<N>>) -> Result<Vec<Slot<N>>, Error> {
+impl AvailableSlotsProvider for PostgresRepository {
+    async fn available_slots(&self, slots: Vec<Slot>) -> Result<Vec<Slot>, Error> {
         let starts: Vec<DateTime<Utc>> = slots.iter().map(|slot| slot.start()).collect();
         let mut slots: HashMap<_, _> =
             HashMap::from_iter(slots.into_iter().map(|slot| (slot.start(), slot)));
@@ -79,8 +81,8 @@ impl<const N: usize> AvailableSlotsProvider<N> for PostgresRepository {
 }
 
 #[async_trait]
-impl<const N: usize> ReservedSlotsProvider<N> for PostgresRepository {
-    async fn reserved_slots(&self, slots: Vec<Slot<N>>) -> Result<Vec<Slot<N>>, Error> {
+impl ReservedSlotsProvider for PostgresRepository {
+    async fn reserved_slots(&self, slots: Vec<Slot>) -> Result<Vec<Slot>, Error> {
         let starts: Vec<DateTime<Utc>> = slots.iter().map(|slot| slot.start()).collect();
         let mut slots: HashMap<_, _> =
             HashMap::from_iter(slots.into_iter().map(|slot| (slot.start(), slot)));
@@ -105,8 +107,8 @@ impl<const N: usize> ReservedSlotsProvider<N> for PostgresRepository {
 }
 
 #[async_trait]
-impl<const N: usize> ReservedSlotProvider<N> for PostgresRepository {
-    async fn reserved_slot(&self, mut slot: Slot<N>) -> Result<Slot<N>, Error> {
+impl ReservedSlotProvider for PostgresRepository {
+    async fn reserved_slot(&self, mut slot: Slot) -> Result<Slot, Error> {
         with_client!(self.pool, async |client| {
             let raw = select_slot_raw_reservations_with_user(client, slot.start()).await?;
             for r in raw {
@@ -119,8 +121,8 @@ impl<const N: usize> ReservedSlotProvider<N> for PostgresRepository {
 }
 
 #[async_trait]
-impl<const N: usize> SlotsRepository<N> for PostgresRepository {
-    async fn save_slot(&self, slot: &Slot<N>) -> Result<(), Error> {
+impl SlotsRepository for PostgresRepository {
+    async fn save_slot(&self, slot: &Slot) -> Result<(), Error> {
         with_transaction!(self.pool, async |tx: &Transaction| {
             delete_reservations(tx, slot.start()).await?;
             let raw_reservations = slot_to_raw_reservations(&slot);
@@ -153,23 +155,21 @@ impl UserProvider for PostgresRepository {
 
 #[cfg(test)]
 mod test_utils {
-    use crate::domain::models::{ClosedRange, Slot};
-    use chrono::{Duration, NaiveDate, NaiveTime};
+    use crate::domain::models::Slot;
+    use crate::domain::services::SlotsFactory;
+    use chrono::{NaiveDate, NaiveTime};
     use deadpool_postgres::Pool;
 
-    pub async fn create_slot_hm<const N: usize>(
+    pub async fn create_slot_hm(
+        factory: &impl SlotsFactory,
         date: NaiveDate,
         start_h: u32,
         start_m: u32,
-        dur_m: u32,
-    ) -> Slot<N> {
+    ) -> Slot {
         let start = date
             .and_time(NaiveTime::from_hms_opt(start_h, start_m, 0).unwrap())
             .and_utc();
-        Slot::empty(ClosedRange {
-            start,
-            end: start + Duration::minutes(dur_m as i64),
-        })
+        factory.create(start)
     }
 
     pub async fn setup_db(pool: &Pool) -> Result<(), tokio_postgres::Error> {
@@ -189,20 +189,22 @@ mod test_utils {
 mod has_available_slots_tests {
     use super::test_utils::*;
     use super::*;
+    use crate::domain::services::FixedSlotsFactory;
     use crate::utils::postgres::testing::test_db_setup;
-    use chrono::NaiveDate;
+    use chrono::{Duration, NaiveDate};
 
     #[tokio::test]
     async fn test_has_available_slots() {
+        let factory = FixedSlotsFactory::new(3, Duration::minutes(20));
         let pool = test_db_setup().await;
         setup_db(&pool).await.unwrap();
         let repo = PostgresRepository { pool };
 
         let date = NaiveDate::from_ymd_opt(2025, 7, 14).unwrap();
-        let slots: Vec<Slot<3>> = vec![
-            create_slot_hm(date, 9, 0, 20).await,
-            create_slot_hm(date, 9, 20, 20).await,
-            create_slot_hm(date, 9, 40, 20).await,
+        let slots: Vec<Slot> = vec![
+            create_slot_hm(&factory, date, 9, 0).await,
+            create_slot_hm(&factory, date, 9, 20).await,
+            create_slot_hm(&factory, date, 9, 40).await,
         ];
 
         let res = repo.has_available_slots(&slots).await;
@@ -214,14 +216,15 @@ mod has_available_slots_tests {
 
     #[tokio::test]
     async fn test_has_no_available_slots() {
+        let factory = FixedSlotsFactory::new(2, Duration::minutes(20));
         let pool = test_db_setup().await;
         setup_db(&pool).await.unwrap();
         let repo = PostgresRepository { pool };
 
         let date = NaiveDate::from_ymd_opt(2025, 7, 14).unwrap();
-        let slots: Vec<Slot<2>> = vec![
-            create_slot_hm(date, 9, 0, 20).await,
-            create_slot_hm(date, 9, 20, 20).await,
+        let slots: Vec<Slot> = vec![
+            create_slot_hm(&factory, date, 9, 0).await,
+            create_slot_hm(&factory, date, 9, 20).await,
         ];
 
         let res = repo.has_available_slots(&slots).await;
@@ -236,19 +239,21 @@ mod has_available_slots_tests {
 mod available_slots_tests {
     use super::test_utils::*;
     use super::*;
+    use crate::domain::services::FixedSlotsFactory;
     use crate::utils::postgres::testing::test_db_setup;
-    use chrono::NaiveDate;
+    use chrono::{Duration, NaiveDate};
 
     #[tokio::test]
     async fn test_one_available_slot() {
+        let factory = FixedSlotsFactory::new(3, Duration::minutes(20));
         let pool = test_db_setup().await;
         setup_db(&pool).await.unwrap();
         let repo = PostgresRepository { pool };
 
         let date = NaiveDate::from_ymd_opt(2025, 7, 14).unwrap();
-        let slots: Vec<Slot<3>> = vec![
-            create_slot_hm(date, 9, 0, 0).await,
-            create_slot_hm(date, 9, 20, 0).await,
+        let slots: Vec<Slot> = vec![
+            create_slot_hm(&factory, date, 9, 00).await,
+            create_slot_hm(&factory, date, 9, 20).await,
         ];
 
         let res = repo.available_slots(slots).await;
@@ -262,12 +267,13 @@ mod available_slots_tests {
 
     #[tokio::test]
     async fn test_empty_available_slots() {
+        let factory = FixedSlotsFactory::new(3, Duration::minutes(20));
         let pool = test_db_setup().await;
         setup_db(&pool).await.unwrap();
         let repo = PostgresRepository { pool };
 
         let date = NaiveDate::from_ymd_opt(2025, 7, 14).unwrap();
-        let slots: Vec<Slot<3>> = vec![create_slot_hm(date, 9, 0, 0).await];
+        let slots: Vec<Slot> = vec![create_slot_hm(&factory, date, 9, 0).await];
 
         let res = repo.available_slots(slots).await;
 
@@ -278,15 +284,16 @@ mod available_slots_tests {
 
     #[tokio::test]
     async fn test_available_slots() {
+        let factory = FixedSlotsFactory::new(3, Duration::minutes(20));
         let pool = test_db_setup().await;
         setup_db(&pool).await.unwrap();
         let repo = PostgresRepository { pool };
 
         let date = NaiveDate::from_ymd_opt(2025, 7, 14).unwrap();
-        let slots: Vec<Slot<3>> = vec![
-            create_slot_hm(date, 9, 0, 0).await,
-            create_slot_hm(date, 9, 20, 0).await,
-            create_slot_hm(date, 9, 40, 0).await,
+        let slots: Vec<Slot> = vec![
+            create_slot_hm(&factory, date, 9, 0).await,
+            create_slot_hm(&factory, date, 9, 20).await,
+            create_slot_hm(&factory, date, 9, 40).await,
         ];
 
         let res = repo.available_slots(slots).await;
@@ -304,19 +311,21 @@ mod available_slots_tests {
 mod reserved_slots_tests {
     use super::test_utils::*;
     use super::*;
+    use crate::domain::services::FixedSlotsFactory;
     use crate::utils::postgres::testing::test_db_setup;
-    use chrono::NaiveDate;
+    use chrono::{Duration, NaiveDate};
 
     #[tokio::test]
     async fn test_no_reserved_slots() {
+        let factory = FixedSlotsFactory::new(3, Duration::minutes(20));
         let pool = test_db_setup().await;
         setup_db(&pool).await.unwrap();
         let repo = PostgresRepository { pool };
 
         let date = NaiveDate::from_ymd_opt(2025, 7, 14).unwrap();
-        let slots: Vec<Slot<3>> = vec![
-            create_slot_hm(date, 9, 40, 0).await,
-            create_slot_hm(date, 10, 00, 0).await,
+        let slots: Vec<Slot> = vec![
+            create_slot_hm(&factory, date, 9, 40).await,
+            create_slot_hm(&factory, date, 10, 00).await,
         ];
 
         let res = repo.reserved_slots(slots).await;
@@ -328,12 +337,13 @@ mod reserved_slots_tests {
 
     #[tokio::test]
     async fn test_one_reserved_slot() {
+        let factory = FixedSlotsFactory::new(3, Duration::minutes(20));
         let pool = test_db_setup().await;
         setup_db(&pool).await.unwrap();
         let repo = PostgresRepository { pool };
 
         let date = NaiveDate::from_ymd_opt(2025, 7, 14).unwrap();
-        let slots: Vec<Slot<3>> = vec![create_slot_hm(date, 9, 20, 0).await];
+        let slots: Vec<Slot> = vec![create_slot_hm(&factory, date, 9, 20).await];
 
         let res = repo.reserved_slots(slots).await;
 
@@ -346,14 +356,15 @@ mod reserved_slots_tests {
 
     #[tokio::test]
     async fn test_reserved_slots() {
+        let factory = FixedSlotsFactory::new(3, Duration::minutes(20));
         let pool = test_db_setup().await;
         setup_db(&pool).await.unwrap();
         let repo = PostgresRepository { pool };
 
         let date = NaiveDate::from_ymd_opt(2025, 7, 14).unwrap();
-        let slots: Vec<Slot<3>> = vec![
-            create_slot_hm(date, 9, 00, 0).await,
-            create_slot_hm(date, 9, 20, 0).await,
+        let slots: Vec<Slot> = vec![
+            create_slot_hm(&factory, date, 9, 00).await,
+            create_slot_hm(&factory, date, 9, 20).await,
         ];
 
         let res = repo.reserved_slots(slots).await;

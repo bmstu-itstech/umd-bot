@@ -5,36 +5,40 @@ use crate::domain::models::reservation::Reservation;
 use crate::domain::models::{ClosedRange, Service, User, UserID};
 
 #[derive(Debug, Clone)]
-pub struct Slot<const N: usize> {
+pub struct Slot {
     interval: ClosedRange<DateTime<Utc>>,
     reservations: Vec<Reservation>,
+    max_size: usize,
 }
 
-impl<const N: usize> Slot<N> {
-    pub fn empty(interval: ClosedRange<DateTime<Utc>>) -> Self {
+impl Slot {
+    pub fn empty(interval: ClosedRange<DateTime<Utc>>, size: usize) -> Self {
         Self {
             interval,
-            reservations: Vec::with_capacity(N),
+            reservations: Vec::with_capacity(size),
+            max_size: size,
         }
     }
 
     pub fn restore(
         interval: ClosedRange<DateTime<Utc>>,
         reservations: &[Reservation],
+        max_size: usize,
     ) -> Result<Self, Error> {
-        if reservations.len() > N {
-            return Err(Error::MaxCapacityExceeded(N));
+        if reservations.len() > max_size {
+            return Err(Error::MaxCapacityExceeded(max_size));
         }
 
         Ok(Self {
             interval,
             reservations: Vec::from(reservations),
+            max_size,
         })
     }
 
     pub fn reserve(&mut self, user: User, service: Service) -> Result<(), Error> {
-        if self.reservations.len() >= N {
-            return Err(Error::MaxCapacityExceeded(N));
+        if self.reservations.len() >= self.max_size {
+            return Err(Error::MaxCapacityExceeded(self.max_size));
         }
         self.reservations.push(Reservation::new(user, service));
         Ok(())
@@ -63,6 +67,10 @@ impl<const N: usize> Slot<N> {
     pub fn start(&self) -> DateTime<Utc> {
         self.interval.start
     }
+    
+    pub fn max_size(&self) -> usize {
+        self.max_size
+    }
 
     pub fn is_empty(&self) -> bool {
         self.reservations.is_empty()
@@ -73,7 +81,7 @@ impl<const N: usize> Slot<N> {
     }
 
     pub fn is_available(&self) -> bool {
-        self.reservations.len() < N
+        self.reservations.len() < self.max_size
     }
 
     pub fn reserved(&self) -> usize {
@@ -81,7 +89,7 @@ impl<const N: usize> Slot<N> {
     }
 
     pub fn available(&self) -> usize {
-        N - self.reservations().len()
+        self.max_size - self.reservations().len()
     }
 }
 
@@ -121,7 +129,7 @@ mod slot_tests {
         // GIVEN пустой слот
         // GIVEN заданный интервал времени
         let interval = interval_with_hours(1, 2, Utc);
-        let slot = Slot::<3>::empty(interval.clone());
+        let slot = Slot::empty(interval.clone(), 1);
 
         // THEN слот должен быть доступным
         assert!(slot.is_available());
@@ -140,8 +148,8 @@ mod slot_tests {
             Reservation::new(create_user(2), Service::RenewalOfRegistration),
         ];
 
-        // WHEN слот на 3 месте восстанавливается из исходных значений
-        let slot = Slot::<3>::restore(interval.clone(), &reservations).unwrap();
+        // WHEN слот на 3 места восстанавливается из исходных значений
+        let slot = Slot::restore(interval.clone(), &reservations, 3).unwrap();
 
         // THEN слот забронирован указанными ранее пользователями
         assert_eq!(slot.reservations(), reservations);
@@ -162,8 +170,8 @@ mod slot_tests {
             Reservation::new(create_user(4), Service::Insurance),
         ];
 
-        // WHEN попытка восстановить слот на 3 месте из значений
-        let result = Slot::<3>::restore(interval, &reservations);
+        // WHEN попытка восстановить слот на 3 места из значений
+        let result = Slot::restore(interval, &reservations, 3);
 
         // THEN ошибка, что слот переполнен
         assert!(result.is_err());
@@ -176,7 +184,7 @@ mod slot_tests {
         // GIVEN пустой слот на 3 места
         // GIVEN один пользователь
         let interval = interval_with_hours(1, 2, Utc);
-        let mut slot = Slot::<3>::empty(interval);
+        let mut slot = Slot::empty(interval, 3);
         let user = create_user(1);
 
         // WHEN пользователь бронирует слот
@@ -203,7 +211,7 @@ mod slot_tests {
             Reservation::new(create_user(2), Service::RenewalOfRegistration),
             Reservation::new(create_user(3), Service::Visa),
         ];
-        let mut slot = Slot::<3>::restore(interval, &reservations).unwrap();
+        let mut slot = Slot::restore(interval, &reservations, 3).unwrap();
         let user = create_user(4);
 
         // WHEN пользователь бронирует слот

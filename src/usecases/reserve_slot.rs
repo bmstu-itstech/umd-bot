@@ -1,39 +1,33 @@
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Utc};
 use std::sync::Arc;
 
 use crate::domain::Error;
 use crate::domain::interfaces::{AvailableSlotsProvider, SlotsRepository, UserProvider};
 use crate::domain::models::{Service, UserID};
-use crate::domain::services::WorkingHoursPolicy;
+use crate::domain::services::{SlotsFactory, WorkingHoursPolicy};
 
 #[derive(Clone)]
-pub struct ReserveSlotUseCase<const N: usize, WP>
-where
-    WP: WorkingHoursPolicy,
-{
-    duration: Duration,
-    policy: WP,
+pub struct ReserveSlotUseCase {
+    factory: Arc<dyn SlotsFactory>,
+    policy: Arc<dyn WorkingHoursPolicy>,
     user_provider: Arc<dyn UserProvider>,
-    provider: Arc<dyn AvailableSlotsProvider<N>>,
-    repos: Arc<dyn SlotsRepository<N>>,
+    as_provider: Arc<dyn AvailableSlotsProvider>,
+    repos: Arc<dyn SlotsRepository>,
 }
 
-impl<const N: usize, WP> ReserveSlotUseCase<N, WP>
-where
-    WP: WorkingHoursPolicy,
-{
+impl ReserveSlotUseCase {
     pub fn new(
-        duration: Duration,
-        policy: WP,
+        factory: Arc<dyn SlotsFactory>,
+        policy: Arc<dyn WorkingHoursPolicy>,
         user_provider: Arc<dyn UserProvider>,
-        provider: Arc<dyn AvailableSlotsProvider<N>>,
-        repos: Arc<dyn SlotsRepository<N>>,
+        as_provider: Arc<dyn AvailableSlotsProvider>,
+        repos: Arc<dyn SlotsRepository>,
     ) -> Self {
         Self {
-            duration,
+            factory,
             policy,
             user_provider,
-            provider,
+            as_provider,
             repos,
         }
     }
@@ -47,8 +41,8 @@ where
         let user = self.user_provider.user(user_id).await?;
 
         let date = time.date_naive();
-        let slots = self.policy.generate_slots(date, self.duration)?;
-        let mut slots = self.provider.available_slots(slots).await?;
+        let slots = self.factory.create_all(date, self.policy.as_ref());
+        let mut slots = self.as_provider.available_slots(slots).await?;
         let res = slots.iter_mut().find(|slot| slot.interval().start == time);
 
         let slot = match res {

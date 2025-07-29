@@ -8,20 +8,12 @@ use crate::bot::handlers::user::{
     RegistrationState, UpdateState, registration_schema, update_schema, view_schema,
 };
 use crate::domain::Error;
-use crate::domain::services::{DeadlinePolicy, WorkingHoursPolicy};
 use crate::usecases::App;
 
 pub struct UmdDispatcher;
 
 impl UmdDispatcher {
-    pub async fn create<const N: usize, DP, WP>(
-        bot: Bot,
-        app: App<N, DP, WP>,
-    ) -> Dispatcher<Bot, Error, DefaultKey>
-    where
-        DP: DeadlinePolicy + Send + Sync + 'static,
-        WP: WorkingHoursPolicy + Send + Sync + 'static,
-    {
+    pub async fn create(bot: Bot, app: App) -> Dispatcher<Bot, Error, DefaultKey> {
         Dispatcher::builder(bot, Self::scheme())
             .dependencies(dptree::deps![
                 app.cancel_reservation,

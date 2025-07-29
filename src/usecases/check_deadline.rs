@@ -7,19 +7,15 @@ use crate::domain::models::{Service, UserID};
 use crate::domain::services::DeadlinePolicy;
 
 #[derive(Clone)]
-pub struct CheckDeadlineUseCase<DP>
-where
-    DP: DeadlinePolicy + Send + Sync,
+pub struct CheckDeadlineUseCase
 {
-    deadline_policy: DP,
+    deadline_policy: Arc<dyn DeadlinePolicy>,
     provider: Arc<dyn UserProvider>,
 }
 
-impl<D> CheckDeadlineUseCase<D>
-where
-    D: DeadlinePolicy + Send + Sync,
+impl CheckDeadlineUseCase
 {
-    pub fn new(deadline_policy: D, provider: Arc<dyn UserProvider>) -> Self {
+    pub fn new(deadline_policy: Arc<dyn DeadlinePolicy>, provider: Arc<dyn UserProvider>) -> Self {
         Self {
             deadline_policy,
             provider,

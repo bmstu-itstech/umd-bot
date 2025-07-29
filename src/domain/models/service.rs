@@ -22,6 +22,18 @@ impl Service {
             _ => false,
         }
     }
+    
+    pub fn all() -> &'static [Service] {
+        &[
+            Service::InitialRegistration,
+            Service::Visa,
+            Service::Insurance,
+            Service::VisaAndInsurance,
+            Service::RenewalOfRegistration,
+            Service::RenewalOfVisa,
+            Service::All,
+        ]
+    }
 }
 
 impl Into<String> for Service {

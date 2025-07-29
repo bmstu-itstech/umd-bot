@@ -4,28 +4,28 @@ use crate::domain::Error;
 use crate::domain::models::{Slot, User, UserID};
 
 #[async_trait]
-pub trait HasAvailableSlotsProvider<const N: usize>: Send + Sync {
-    async fn has_available_slots(&self, slots: &[Slot<N>]) -> Result<bool, Error>;
+pub trait HasAvailableSlotsProvider: Send + Sync {
+    async fn has_available_slots(&self, slots: &[Slot]) -> Result<bool, Error>;
 }
 
 #[async_trait]
-pub trait AvailableSlotsProvider<const N: usize>: Send + Sync {
-    async fn available_slots(&self, slots: Vec<Slot<N>>) -> Result<Vec<Slot<N>>, Error>;
+pub trait AvailableSlotsProvider: Send + Sync {
+    async fn available_slots(&self, slots: Vec<Slot>) -> Result<Vec<Slot>, Error>;
 }
 
 #[async_trait]
-pub trait ReservedSlotsProvider<const N: usize>: Send + Sync {
-    async fn reserved_slots(&self, slots: Vec<Slot<N>>) -> Result<Vec<Slot<N>>, Error>;
+pub trait ReservedSlotsProvider: Send + Sync {
+    async fn reserved_slots(&self, slots: Vec<Slot>) -> Result<Vec<Slot>, Error>;
 }
 
 #[async_trait]
-pub trait ReservedSlotProvider<const N: usize>: Send + Sync {
-    async fn reserved_slot(&self, slot: Slot<N>) -> Result<Slot<N>, Error>;
+pub trait ReservedSlotProvider: Send + Sync {
+    async fn reserved_slot(&self, slot: Slot) -> Result<Slot, Error>;
 }
 
 #[async_trait]
-pub trait SlotsRepository<const N: usize>: Send + Sync {
-    async fn save_slot(&self, slot: &Slot<N>) -> Result<(), Error>;
+pub trait SlotsRepository: Send + Sync {
+    async fn save_slot(&self, slot: &Slot) -> Result<(), Error>;
 }
 
 #[async_trait]

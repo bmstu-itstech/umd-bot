@@ -1,16 +1,10 @@
-use chrono::{DateTime, Datelike, Duration, NaiveDate, NaiveTime, Utc, Weekday};
+use chrono::{DateTime, Datelike, NaiveDate, NaiveTime, Utc, Weekday};
 
-use crate::domain::Error;
-use crate::domain::models::{ClosedRange, Slot};
+use crate::domain::models::ClosedRange;
 
 /// WorkingHoursPolicy описывает рабочие часы сотрудника УМД.
-pub trait WorkingHoursPolicy {
+pub trait WorkingHoursPolicy: Send + Sync {
     fn is_working(&self, interval: &ClosedRange<DateTime<Utc>>) -> bool;
-    fn generate_slots<const N: usize>(
-        &self,
-        date: NaiveDate,
-        duration: Duration,
-    ) -> Result<Vec<Slot<N>>, Error>;
 }
 
 /// Mon2FriWorkingHoursPolicy описывает рабочую неделю с
@@ -25,24 +19,6 @@ impl WorkingHoursPolicy for Mon2FriWorkingHoursPolicy {
             Weekday::Sat | Weekday::Sun => false,
             _ => true,
         }
-    }
-
-    fn generate_slots<const N: usize>(
-        &self,
-        date: NaiveDate,
-        duration: Duration,
-    ) -> Result<Vec<Slot<N>>, Error> {
-        let start = date.and_hms_opt(0, 0, 0).unwrap().and_utc();
-        Ok(
-            std::iter::successors(Some(start), move |&start| Some(start + duration))
-                .take_while(move |time| time.date_naive() == date)
-                .map(|time| ClosedRange {
-                    start: time,
-                    end: time + duration,
-                })
-                .map(move |interval| Slot::empty(interval))
-                .collect(),
-        )
     }
 }
 
@@ -70,28 +46,24 @@ impl WorkingHoursPolicy for Mon2ThuAndFriWithLunchWorkingHoursPolicy {
         };
         working_hours.contains(interval) && !lunch_time.overlaps(interval)
     }
+}
 
-    fn generate_slots<const N: usize>(
-        &self,
-        date: NaiveDate,
-        duration: Duration,
-    ) -> Result<Vec<Slot<N>>, Error> {
-        let working_hours = match self.bounds(date) {
-            None => return Ok(Vec::new()),
-            Some(working_hours) => working_hours,
-        };
-
-        let start = working_hours.start.clone();
-        Ok(
-            std::iter::successors(Some(start), move |&start| Some(start + duration))
-                .take_while(move |time| time.date_naive() == date)
-                .map(|time| ClosedRange {
-                    start: time,
-                    end: time + duration,
-                }) // Как сделать без unwrap?
-                .filter(move |interval| self.is_working(interval))
-                .map(move |interval| Slot::empty(interval))
-                .collect(),
+#[cfg(test)]
+impl Default for Mon2ThuAndFriWithLunchWorkingHoursPolicy {
+    fn default() -> Self {
+        Self::new(
+            ClosedRange {
+                start: NaiveTime::from_hms_opt(10, 0, 0).unwrap(),
+                end: NaiveTime::from_hms_opt(17, 0, 0).unwrap(),
+            },
+            ClosedRange {
+                start: NaiveTime::from_hms_opt(12, 0, 0).unwrap(),
+                end: NaiveTime::from_hms_opt(16, 0, 0).unwrap(),
+            },
+            ClosedRange {
+                start: NaiveTime::from_hms_opt(12, 30, 0).unwrap(),
+                end: NaiveTime::from_hms_opt(13, 30, 0).unwrap(),
+            },
         )
     }
 }
@@ -131,23 +103,6 @@ mod mon2thu_and_fri_with_lunch_working_hours_policy_tests {
     use super::*;
     use chrono::Duration;
 
-    fn setup_default() -> Mon2ThuAndFriWithLunchWorkingHoursPolicy {
-        Mon2ThuAndFriWithLunchWorkingHoursPolicy::new(
-            ClosedRange {
-                start: NaiveTime::from_hms_opt(10, 0, 0).unwrap(),
-                end: NaiveTime::from_hms_opt(17, 0, 0).unwrap(),
-            },
-            ClosedRange {
-                start: NaiveTime::from_hms_opt(12, 0, 0).unwrap(),
-                end: NaiveTime::from_hms_opt(16, 0, 0).unwrap(),
-            },
-            ClosedRange {
-                start: NaiveTime::from_hms_opt(12, 30, 0).unwrap(),
-                end: NaiveTime::from_hms_opt(13, 30, 0).unwrap(),
-            },
-        )
-    }
-
     mod test_weekdays_bounds {
         use super::*;
         use chrono::TimeZone;
@@ -155,7 +110,7 @@ mod mon2thu_and_fri_with_lunch_working_hours_policy_tests {
         #[test]
         fn test_weekday_bounds() {
             // GIVEN Mon2ThuAndFriWithLunchWorkingHoursPolicy
-            let policy = setup_default();
+            let policy = Mon2ThuAndFriWithLunchWorkingHoursPolicy::default();
 
             // WHEN день - понедельник (рабочий и не пятница)
             let date = NaiveDate::from_ymd_opt(2025, 7, 7).unwrap();
@@ -174,7 +129,7 @@ mod mon2thu_and_fri_with_lunch_working_hours_policy_tests {
         #[test]
         fn test_friday_bounds() {
             // GIVEN Mon2ThuAndFriWithLunchWorkingHoursPolicy
-            let policy = setup_default();
+            let policy = Mon2ThuAndFriWithLunchWorkingHoursPolicy::default();
 
             // WHEN день - пятница
             let date = NaiveDate::from_ymd_opt(2025, 7, 11).unwrap();
@@ -193,7 +148,7 @@ mod mon2thu_and_fri_with_lunch_working_hours_policy_tests {
         #[test]
         fn test_weekend_bounds() {
             // GIVEN Mon2ThuAndFriWithLunchWorkingHoursPolicy
-            let policy = setup_default();
+            let policy = Mon2ThuAndFriWithLunchWorkingHoursPolicy::default();
 
             // WHEN день - выходной
             let date = NaiveDate::from_ymd_opt(2025, 7, 12).unwrap();
@@ -211,7 +166,7 @@ mod mon2thu_and_fri_with_lunch_working_hours_policy_tests {
         #[test]
         fn test_weekend_is_not_working() {
             // GIVEN Mon2ThuAndFriWithLunchWorkingHoursPolicy
-            let policy = setup_default();
+            let policy = Mon2ThuAndFriWithLunchWorkingHoursPolicy::default();
 
             // WHEN выходной день
             let date = NaiveDate::from_ymd_opt(2025, 7, 12).unwrap();
@@ -228,7 +183,7 @@ mod mon2thu_and_fri_with_lunch_working_hours_policy_tests {
         #[test]
         fn test_weekday_is_working_until_17_hours() {
             // GIVEN Mon2ThuAndFriWithLunchWorkingHoursPolicy
-            let policy = setup_default();
+            let policy = Mon2ThuAndFriWithLunchWorkingHoursPolicy::default();
 
             // WHEN будний день кроме пятницы и время с 16:00 до 17:00
             let date = NaiveDate::from_ymd_opt(2025, 7, 10).unwrap();
@@ -245,7 +200,7 @@ mod mon2thu_and_fri_with_lunch_working_hours_policy_tests {
         #[test]
         fn test_friday_is_not_working_from_16() {
             // GIVEN Mon2ThuAndFriWithLunchWorkingHoursPolicy
-            let policy = setup_default();
+            let policy = Mon2ThuAndFriWithLunchWorkingHoursPolicy::default();
 
             // WHEN пятница и время с 16 до 17
             let date = NaiveDate::from_ymd_opt(2025, 7, 11).unwrap();
@@ -262,7 +217,7 @@ mod mon2thu_and_fri_with_lunch_working_hours_policy_tests {
         #[test]
         fn test_friday_is_working_until_16() {
             // GIVEN Mon2ThuAndFriWithLunchWorkingHoursPolicy
-            let policy = setup_default();
+            let policy = Mon2ThuAndFriWithLunchWorkingHoursPolicy::default();
 
             // WHEN пятница и время с 16 до 17
             let date = NaiveDate::from_ymd_opt(2025, 7, 11).unwrap();
@@ -279,7 +234,7 @@ mod mon2thu_and_fri_with_lunch_working_hours_policy_tests {
         #[test]
         fn test_lunch_is_not_working() {
             // GIVEN Mon2ThuAndFriWithLunchWorkingHoursPolicy
-            let policy = setup_default();
+            let policy = Mon2ThuAndFriWithLunchWorkingHoursPolicy::default();
 
             // WHEN будний день и время, пересекающее обед
             let date = NaiveDate::from_ymd_opt(2025, 7, 10).unwrap();

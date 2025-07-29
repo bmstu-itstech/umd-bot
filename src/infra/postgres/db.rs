@@ -304,7 +304,7 @@ pub async fn select_available_raw_reservations_with_user<C: GenericClient>(
 pub async fn has_available_slots<C: GenericClient>(
     client: &C,
     starts: &[DateTime<Utc>],
-    n: i64,
+    max_size: i64,
 ) -> Result<bool, Error> {
     let working_slots_start: Vec<String> = starts
         .iter()
@@ -340,7 +340,7 @@ pub async fn has_available_slots<C: GenericClient>(
     );
 
     let row = client
-        .query_one(&query, &[&n])
+        .query_one(&query, &[&max_size])
         .await
         .map_err(|err| Error::Other(err.into()))?;
     let exists: bool = row.get(0);
@@ -385,7 +385,7 @@ pub fn fetch_raw_reservations_with_user(
         .map_err(|err| Error::Other(err.into()))
 }
 
-pub fn slot_to_raw_reservations<const N: usize>(slot: &Slot<N>) -> Vec<RawReservation> {
+pub fn slot_to_raw_reservations(slot: &Slot) -> Vec<RawReservation> {
     slot.reservations()
         .iter()
         .map(|r| RawReservation {

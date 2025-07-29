@@ -3,7 +3,7 @@ use chrono::Days;
 use crate::domain::models::Citizenship;
 
 /// DeadlinePolicy описывает сроки подачи основных документов для иностранцев.
-pub trait DeadlinePolicy {
+pub trait DeadlinePolicy: Send + Sync {
     fn deadline(&self, citizenship: &Citizenship) -> Days;
 }
 

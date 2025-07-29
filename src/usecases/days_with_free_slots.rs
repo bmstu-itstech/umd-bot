@@ -1,41 +1,33 @@
-use chrono::{Days, Duration, NaiveDate};
+use chrono::{Days, NaiveDate};
 use std::ops::Add;
 use std::sync::Arc;
 
 use crate::domain::Error;
 use crate::domain::interfaces::{HasAvailableSlotsProvider, UserProvider};
 use crate::domain::models::{ClosedRange, Service, UserID};
-use crate::domain::services::{DeadlinePolicy, WorkingHoursPolicy};
+use crate::domain::services::{DeadlinePolicy, SlotsFactory, WorkingHoursPolicy};
 
 const MAX_DAYS_BEFORE_RESERVE: Days = Days::new(30);
 
 #[derive(Clone)]
-pub struct DaysWithFreeSlotsUseCase<const N: usize, DP, WP>
-where
-    DP: DeadlinePolicy,
-    WP: WorkingHoursPolicy,
-{
-    duration: Duration,
-    deadline_policy: DP,
-    working_hours_policy: WP,
+pub struct DaysWithFreeSlotsUseCase {
+    factory: Arc<dyn SlotsFactory>,
+    deadline_policy: Arc<dyn DeadlinePolicy>,
+    working_hours_policy: Arc<dyn WorkingHoursPolicy>,
     user_provider: Arc<dyn UserProvider>,
-    provider: Arc<dyn HasAvailableSlotsProvider<N>>,
+    provider: Arc<dyn HasAvailableSlotsProvider>,
 }
 
-impl<const N: usize, DP, WP> DaysWithFreeSlotsUseCase<N, DP, WP>
-where
-    DP: DeadlinePolicy,
-    WP: WorkingHoursPolicy,
-{
+impl DaysWithFreeSlotsUseCase {
     pub fn new(
-        duration: Duration,
-        deadline_policy: DP,
-        working_hours_policy: WP,
+        factory: Arc<dyn SlotsFactory>,
+        deadline_policy: Arc<dyn DeadlinePolicy>,
+        working_hours_policy: Arc<dyn WorkingHoursPolicy>,
         user_provider: Arc<dyn UserProvider>,
-        provider: Arc<dyn HasAvailableSlotsProvider<N>>,
+        provider: Arc<dyn HasAvailableSlotsProvider>,
     ) -> Self {
         Self {
-            duration,
+            factory,
             deadline_policy,
             working_hours_policy,
             user_provider,
@@ -61,8 +53,8 @@ where
         let mut result = Vec::new();
         for date in range.into_iter() {
             let slots = self
-                .working_hours_policy
-                .generate_slots(date, self.duration)?;
+                .factory
+                .create_all(date, self.working_hours_policy.as_ref());
 
             if self.provider.has_available_slots(&slots).await? {
                 result.push(date);

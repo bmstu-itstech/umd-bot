@@ -31,10 +31,11 @@ pub struct SlotDTO {
     pub start: DateTime<Utc>,
     pub end: DateTime<Utc>,
     pub reservations: Vec<ReservationDTO>,
+    pub max_size: usize,
 }
 
-impl<const N: usize> From<&Slot<N>> for FreeSlotDTO {
-    fn from(s: &Slot<N>) -> Self {
+impl From<&Slot> for FreeSlotDTO {
+    fn from(s: &Slot) -> Self {
         Self {
             start: s.start(),
             end: s.interval().end,
@@ -64,12 +65,13 @@ impl From<&User> for UserDTO {
     }
 }
 
-impl<const N: usize> From<&Slot<N>> for SlotDTO {
-    fn from(slot: &Slot<N>) -> Self {
+impl From<&Slot> for SlotDTO {
+    fn from(slot: &Slot) -> Self {
         Self {
             start: slot.interval().start,
             end: slot.interval().end,
             reservations: slot.reservations().iter().map(|r| r.into()).collect(),
+            max_size: slot.max_size(),
         }
     }
 }
