@@ -12,7 +12,7 @@ pub trait DeadlinePolicy {
 /// - 30 дней для граждан Казахстана, Киргизстана и Армении;
 /// - 90 дней для граждан Беларуси и Украины;
 /// -  7 дней для граждан иных стран.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct StandardDeadlinePolicy;
 
 impl DeadlinePolicy for StandardDeadlinePolicy {

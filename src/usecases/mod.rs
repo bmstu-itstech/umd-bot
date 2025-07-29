@@ -1,17 +1,25 @@
+mod app;
 mod cancel_reservation;
 mod check_deadline;
+mod check_registered;
 mod days_with_free_slots;
 mod dto;
 mod free_slots;
+mod get_user;
 mod register_user;
 mod reserve_slot;
 mod slots;
+mod update_user;
 
+pub use app::*;
 pub use cancel_reservation::*;
 pub use check_deadline::*;
+pub use check_registered::*;
 pub use days_with_free_slots::*;
 pub use dto::*;
 pub use free_slots::*;
+pub use get_user::*;
 pub use register_user::*;
 pub use reserve_slot::*;
 pub use slots::*;
+pub use update_user::*;

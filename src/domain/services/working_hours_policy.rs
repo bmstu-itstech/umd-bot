@@ -48,6 +48,7 @@ impl WorkingHoursPolicy for Mon2FriWorkingHoursPolicy {
 
 /// Mon2ThuAndFriWithLunchWorkingHoursPolicy описывает стандартную пятидневную рабочую неделю с сокращёнными
 /// часами в пятницу с фиксированным обеденным перерывом. Не учитывает праздничные дни.
+#[derive(Clone)]
 pub struct Mon2ThuAndFriWithLunchWorkingHoursPolicy {
     weekday_hours: ClosedRange<NaiveTime>,
     friday_hours: ClosedRange<NaiveTime>,

@@ -1,11 +1,13 @@
-use chrono::{Duration, NaiveDate};
+use chrono::{Days, Duration, NaiveDate};
 use std::ops::Add;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use crate::domain::Error;
 use crate::domain::interfaces::{HasAvailableSlotsProvider, UserProvider};
-use crate::domain::models::{ClosedRange, TelegramID};
+use crate::domain::models::{ClosedRange, Service, UserID};
 use crate::domain::services::{DeadlinePolicy, WorkingHoursPolicy};
+
+const MAX_DAYS_BEFORE_RESERVE: Days = Days::new(30);
 
 #[derive(Clone)]
 pub struct DaysWithFreeSlotsUseCase<const N: usize, DP, WP>
@@ -16,8 +18,8 @@ where
     duration: Duration,
     deadline_policy: DP,
     working_hours_policy: WP,
-    user_provider: Arc<Mutex<dyn UserProvider>>,
-    provider: Arc<Mutex<dyn HasAvailableSlotsProvider<N>>>,
+    user_provider: Arc<dyn UserProvider>,
+    provider: Arc<dyn HasAvailableSlotsProvider<N>>,
 }
 
 impl<const N: usize, DP, WP> DaysWithFreeSlotsUseCase<N, DP, WP>
@@ -29,8 +31,8 @@ where
         duration: Duration,
         deadline_policy: DP,
         working_hours_policy: WP,
-        user_provider: Arc<Mutex<dyn UserProvider>>,
-        provider: Arc<Mutex<dyn HasAvailableSlotsProvider<N>>>,
+        user_provider: Arc<dyn UserProvider>,
+        provider: Arc<dyn HasAvailableSlotsProvider<N>>,
     ) -> Self {
         Self {
             duration,
@@ -43,18 +45,18 @@ where
 
     pub async fn days_with_free_slots(
         &self,
-        user_id: TelegramID,
+        user_id: UserID,
         date: NaiveDate,
+        service: Service,
     ) -> Result<Vec<NaiveDate>, Error> {
-        let user_provider = self.user_provider.lock().unwrap();
-        let provider = self.provider.lock().unwrap();
-
-        let user = user_provider.user(user_id).await?;
-        let deadline = date.add(self.deadline_policy.deadline(user.citizenship()));
-        let range = ClosedRange {
-            start: date,
-            end: deadline,
+        let user = self.user_provider.user(user_id).await?;
+        let end = if service.has_deadline() {
+            date.add(self.deadline_policy.deadline(user.citizenship()))
+        } else {
+            date.add(MAX_DAYS_BEFORE_RESERVE)
         };
+
+        let range = ClosedRange { start: date, end };
 
         let mut result = Vec::new();
         for date in range.into_iter() {
@@ -62,7 +64,7 @@ where
                 .working_hours_policy
                 .generate_slots(date, self.duration)?;
 
-            if provider.has_available_slots(&slots).await? {
+            if self.provider.has_available_slots(&slots).await? {
                 result.push(date);
             }
         }

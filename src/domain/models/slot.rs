@@ -1,57 +1,58 @@
 use chrono::{DateTime, Utc};
 
 use crate::domain::Error;
-use crate::domain::models::{ClosedRange, User};
+use crate::domain::models::reservation::Reservation;
+use crate::domain::models::{ClosedRange, Service, User, UserID};
 
 #[derive(Debug, Clone)]
 pub struct Slot<const N: usize> {
     interval: ClosedRange<DateTime<Utc>>,
-    reserved_by: Vec<User>,
+    reservations: Vec<Reservation>,
 }
 
 impl<const N: usize> Slot<N> {
     pub fn empty(interval: ClosedRange<DateTime<Utc>>) -> Self {
         Self {
             interval,
-            reserved_by: Vec::with_capacity(N),
+            reservations: Vec::with_capacity(N),
         }
     }
 
     pub fn restore(
         interval: ClosedRange<DateTime<Utc>>,
-        reserved_by: &[User],
+        reservations: &[Reservation],
     ) -> Result<Self, Error> {
-        if reserved_by.len() > N {
+        if reservations.len() > N {
             return Err(Error::MaxCapacityExceeded(N));
         }
 
         Ok(Self {
             interval,
-            reserved_by: Vec::from(reserved_by),
+            reservations: Vec::from(reservations),
         })
     }
 
-    pub fn reserve(&mut self, user: &User) -> Result<(), Error> {
-        if self.reserved_by.len() >= N {
+    pub fn reserve(&mut self, user: User, service: Service) -> Result<(), Error> {
+        if self.reservations.len() >= N {
             return Err(Error::MaxCapacityExceeded(N));
         }
-        self.reserved_by.push(user.clone());
+        self.reservations.push(Reservation::new(user, service));
         Ok(())
     }
 
-    pub fn cancel(&mut self, user: &User) -> Result<(), Error> {
+    pub fn cancel(&mut self, id: UserID) -> Result<(), Error> {
         let idx = self
-            .reserved_by
+            .reservations
             .iter()
             .enumerate()
-            .find(|(_, u)| u.id() == user.id())
+            .find(|(_, u)| u.by().id() == id)
             .map(|(i, _)| i);
 
         if let Some(idx) = idx {
-            self.reserved_by.remove(idx);
+            self.reservations.remove(idx);
             Ok(())
         } else {
-            Err(Error::UserNotReserved(user.id().clone()))
+            Err(Error::UserNotReserved(id))
         }
     }
 
@@ -64,15 +65,23 @@ impl<const N: usize> Slot<N> {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.reserved_by.is_empty()
+        self.reservations.is_empty()
+    }
+
+    pub fn reservations(&self) -> &[Reservation] {
+        &self.reservations
     }
 
     pub fn is_available(&self) -> bool {
-        self.reserved_by.len() < N
+        self.reservations.len() < N
     }
 
-    pub fn reserved_by(&self) -> &[User] {
-        &self.reserved_by
+    pub fn reserved(&self) -> usize {
+        self.reservations.len()
+    }
+
+    pub fn available(&self) -> usize {
+        N - self.reservations().len()
     }
 }
 
@@ -82,9 +91,7 @@ mod slot_tests {
 
     use chrono::{Duration, NaiveDate, TimeZone, Utc};
 
-    use crate::domain::models::{
-        Citizenship, OnlyCyrillic, OnlyLatin, TelegramID, TelegramUsername,
-    };
+    use crate::domain::models::{Citizenship, OnlyCyrillic, OnlyLatin, UserID, Username};
 
     fn interval_with_hours<Tz: TimeZone>(
         start_h: u32,
@@ -100,8 +107,8 @@ mod slot_tests {
 
     fn create_user(id: i64) -> User {
         User::new(
-            TelegramID::new(id),
-            TelegramUsername::new("username"),
+            UserID::new(id),
+            Username::new("username"),
             OnlyLatin::new("Ivan").unwrap(),
             OnlyCyrillic::new("Иван").unwrap(),
             Citizenship::Armenia,
@@ -126,15 +133,18 @@ mod slot_tests {
     #[test]
     fn test_slot_restore_with_valid_data() {
         // GIVEN заданный интервал времени
-        // GIVEN 2 пользователя
+        // GIVEN 2 пользователя, записанные на получение услуги
         let interval = interval_with_hours(1, 2, Utc);
-        let users = vec![create_user(1), create_user(1)];
+        let reservations = vec![
+            Reservation::new(create_user(1), Service::All),
+            Reservation::new(create_user(2), Service::RenewalOfRegistration),
+        ];
 
         // WHEN слот на 3 месте восстанавливается из исходных значений
-        let slot = Slot::<3>::restore(interval.clone(), &users).unwrap();
+        let slot = Slot::<3>::restore(interval.clone(), &reservations).unwrap();
 
         // THEN слот забронирован указанными ранее пользователями
-        assert_eq!(slot.reserved_by(), users);
+        assert_eq!(slot.reservations(), reservations);
 
         // THEN слот всё ещё доступен
         assert!(slot.is_available());
@@ -143,17 +153,17 @@ mod slot_tests {
     #[test]
     fn test_slot_restore_with_exceeded_capacity() {
         // GIVEN заданный интервал времени
-        // GIVEN 4 пользователя
+        // GIVEN 4 пользователя, записанные на получение услуги
         let interval = interval_with_hours(1, 2, Utc);
-        let users = vec![
-            create_user(1),
-            create_user(2),
-            create_user(3),
-            create_user(4),
+        let reservations = vec![
+            Reservation::new(create_user(1), Service::All),
+            Reservation::new(create_user(2), Service::RenewalOfRegistration),
+            Reservation::new(create_user(3), Service::Visa),
+            Reservation::new(create_user(4), Service::Insurance),
         ];
 
         // WHEN попытка восстановить слот на 3 месте из значений
-        let result = Slot::<3>::restore(interval, &users);
+        let result = Slot::<3>::restore(interval, &reservations);
 
         // THEN ошибка, что слот переполнен
         assert!(result.is_err());
@@ -170,13 +180,13 @@ mod slot_tests {
         let user = create_user(1);
 
         // WHEN пользователь бронирует слот
-        let res = slot.reserve(&user);
+        let res = slot.reserve(user, Service::Insurance);
 
         // THEN попытка успешна
         assert!(res.is_ok());
 
         // THEN слот забронирован ровно одним пользователем
-        assert_eq!(slot.reserved_by().len(), 1);
+        assert_eq!(slot.reserved(), 1);
 
         // Слот всё ещё доступен
         assert!(slot.is_available());
@@ -188,17 +198,21 @@ mod slot_tests {
         // GIVEN слот, занятый 3 из 3 пользователями
         // GIVEN четвёртый пользователь
         let interval = interval_with_hours(1, 2, Utc);
-        let users = vec![create_user(1), create_user(2), create_user(3)];
-        let mut slot = Slot::<3>::restore(interval, &users).unwrap();
+        let reservations = vec![
+            Reservation::new(create_user(1), Service::All),
+            Reservation::new(create_user(2), Service::RenewalOfRegistration),
+            Reservation::new(create_user(3), Service::Visa),
+        ];
+        let mut slot = Slot::<3>::restore(interval, &reservations).unwrap();
         let user = create_user(4);
 
         // WHEN пользователь бронирует слот
-        let result = slot.reserve(&user);
+        let result = slot.reserve(user, Service::InitialRegistration);
 
         // THEN ошибка переполнения слота
         assert!(matches!(result, Err(Error::MaxCapacityExceeded(3))));
 
         // THEN слот всё ещё забронирован только 3 пользователями
-        assert_eq!(slot.reserved_by().len(), 3);
+        assert_eq!(slot.reserved(), 3);
     }
 }

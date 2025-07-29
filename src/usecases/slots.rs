@@ -1,10 +1,10 @@
 use chrono::{Duration, NaiveDate};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use crate::domain::Error;
 use crate::domain::interfaces::ReservedSlotsProvider;
 use crate::domain::services::WorkingHoursPolicy;
-use crate::usecases::Slot;
+use crate::usecases::SlotDTO;
 
 #[derive(Clone)]
 pub struct SlotsUseCase<const N: usize, WP>
@@ -13,7 +13,7 @@ where
 {
     duration: Duration,
     policy: WP,
-    provider: Arc<Mutex<dyn ReservedSlotsProvider<N>>>,
+    provider: Arc<dyn ReservedSlotsProvider<N>>,
 }
 
 impl<const N: usize, WP> SlotsUseCase<N, WP>
@@ -23,7 +23,7 @@ where
     pub fn new(
         duration: Duration,
         policy: WP,
-        provider: Arc<Mutex<dyn ReservedSlotsProvider<N>>>,
+        provider: Arc<dyn ReservedSlotsProvider<N>>,
     ) -> Self {
         Self {
             duration,
@@ -32,14 +32,13 @@ where
         }
     }
 
-    pub async fn slots(&self, date: NaiveDate) -> Result<Vec<Slot>, Error> {
-        let provider = self.provider.lock().unwrap();
-
+    pub async fn slots(&self, date: NaiveDate) -> Result<Vec<SlotDTO>, Error> {
         let slots = self.policy.generate_slots(date, self.duration)?;
-        Ok(provider
+        Ok(self
+            .provider
             .reserved_slots(slots)
             .await?
-            .into_iter()
+            .iter()
             .map(|slot| slot.into())
             .collect())
     }

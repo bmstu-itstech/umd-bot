@@ -1,4 +1,4 @@
-use crate::domain::models::TelegramID;
+use crate::domain::models::UserID;
 
 pub type StdError = Box<dyn std::error::Error + Send + Sync>;
 
@@ -14,13 +14,13 @@ pub enum Error {
     MaxCapacityExceeded(usize),
 
     #[error("student already exists: {0}")]
-    UserAlreadyExists(TelegramID),
+    UserAlreadyExists(UserID),
 
     #[error("student not found: {0}")]
-    UserNotFound(TelegramID),
+    UserNotFound(UserID),
 
     #[error("user has not reserved slot: {0}")]
-    UserNotReserved(TelegramID),
+    UserNotReserved(UserID),
 
     #[error("slot not found")]
     SlotNotFoundError,

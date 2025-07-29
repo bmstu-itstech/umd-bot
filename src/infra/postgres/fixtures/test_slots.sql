@@ -5,11 +5,11 @@ VALUES
     (3, 'username3', 'Petrov', 'Петров', 'Ukraine', '2025-07-01')
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO reservations (slot_start, user_id)
+INSERT INTO reservations (slot_start, service, user_id)
 VALUES
-    (TIMESTAMP '2025-07-14 9:00', 1),
-    (TIMESTAMP '2025-07-14 9:00', 2),
-    (TIMESTAMP '2025-07-14 9:00', 3),
-    (TIMESTAMP '2025-07-14 9:20', 1),
-    (TIMESTAMP '2025-07-14 9:20', 2)
+    (TIMESTAMP '2025-07-14 9:00', 'initial_registration', 1),
+    (TIMESTAMP '2025-07-14 9:00', 'visa', 2),
+    (TIMESTAMP '2025-07-14 9:00', 'insurance', 3),
+    (TIMESTAMP '2025-07-14 9:20', 'all', 1),
+    (TIMESTAMP '2025-07-14 9:20', 'renewal_of_visa', 2)
 ON CONFLICT (slot_start, user_id) DO NOTHING;

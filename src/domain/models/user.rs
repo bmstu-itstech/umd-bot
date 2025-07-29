@@ -1,10 +1,10 @@
-use chrono::NaiveDate;
-use std::fmt::Display;
-
 use crate::domain::Error;
 use crate::domain::models::Citizenship;
+use chrono::NaiveDate;
+use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct OnlyLatin(String);
 
 impl OnlyLatin {
@@ -44,7 +44,7 @@ impl CyrillicCheck for char {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct OnlyCyrillic(String);
 
 impl OnlyCyrillic {
@@ -71,9 +71,9 @@ impl OnlyCyrillic {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct TelegramID(i64);
+pub struct UserID(i64);
 
-impl TelegramID {
+impl UserID {
     pub fn new(id: impl Into<i64>) -> Self {
         Self(id.into())
     }
@@ -83,16 +83,16 @@ impl TelegramID {
     }
 }
 
-impl Display for TelegramID {
+impl Display for UserID {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct TelegramUsername(String);
+pub struct Username(String);
 
-impl TelegramUsername {
+impl Username {
     pub fn new(username: impl Into<String>) -> Self {
         Self(username.into())
     }
@@ -104,8 +104,8 @@ impl TelegramUsername {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct User {
-    id: TelegramID,
-    username: TelegramUsername,
+    id: UserID,
+    username: Username,
     full_name_lat: OnlyLatin,
     full_name_cyr: OnlyCyrillic,
     citizenship: Citizenship,
@@ -114,8 +114,8 @@ pub struct User {
 
 impl User {
     pub fn new(
-        id: TelegramID,
-        username: TelegramUsername,
+        id: UserID,
+        username: Username,
         full_name_lat: OnlyLatin,
         full_name_cyr: OnlyCyrillic,
         citizenship: Citizenship,
@@ -131,11 +131,11 @@ impl User {
         }
     }
 
-    pub fn id(&self) -> &TelegramID {
-        &self.id
+    pub fn id(&self) -> UserID {
+        self.id
     }
 
-    pub fn username(&self) -> &TelegramUsername {
+    pub fn username(&self) -> &Username {
         &self.username
     }
 
@@ -167,7 +167,7 @@ impl User {
         self.citizenship = citizenship;
     }
 
-    pub fn set_arrival_data(&mut self, arrival_data: NaiveDate) {
+    pub fn set_arrival_date(&mut self, arrival_data: NaiveDate) {
         self.arrival_date = arrival_data;
     }
 }

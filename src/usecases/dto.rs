@@ -1,126 +1,75 @@
 use chrono::{DateTime, NaiveDate, Utc};
-use serde::{Deserialize, Serialize};
 
-use crate::domain::models;
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum Citizenship {
-    Tajikistan,
-    Uzbekistan,
-    Kazakhstan,
-    Kyrgyzstan,
-    Armenia,
-    Belarus,
-    Ukraine,
-    Other(String),
-}
+use crate::domain::models::{
+    Citizenship, OnlyCyrillic, OnlyLatin, Reservation, Service, Slot, User, UserID, Username,
+};
 
 #[derive(Clone, Debug)]
-pub struct User {
-    pub id: i64,
-    pub username: String,
-    pub full_name_lat: String,
-    pub full_name_cyr: String,
+pub struct UserDTO {
+    pub id: UserID,
+    pub username: Username,
+    pub full_name_lat: OnlyLatin,
+    pub full_name_cyr: OnlyCyrillic,
     pub citizenship: Citizenship,
     pub arrival_date: NaiveDate,
 }
 
 #[derive(Clone, Debug)]
-pub struct FreeSlot {
+pub struct FreeSlotDTO {
     pub start: DateTime<Utc>,
     pub end: DateTime<Utc>,
 }
 
 #[derive(Clone, Debug)]
-pub struct Slot {
+pub struct ReservationDTO {
+    pub by: UserDTO,
+    pub service: Service,
+}
+
+#[derive(Clone, Debug)]
+pub struct SlotDTO {
     pub start: DateTime<Utc>,
     pub end: DateTime<Utc>,
-    pub reserved_by: Vec<User>,
+    pub reservations: Vec<ReservationDTO>,
 }
 
-impl Into<String> for Citizenship {
-    fn into(self) -> String {
-        match self {
-            Citizenship::Tajikistan => "Таджикистан".to_string(),
-            Citizenship::Uzbekistan => "Узбекистан".to_string(),
-            Citizenship::Kazakhstan => "Казахстан".to_string(),
-            Citizenship::Kyrgyzstan => "Кыргызстан".to_string(),
-            Citizenship::Armenia => "Армения".to_string(),
-            Citizenship::Belarus => "Беларусь".to_string(),
-            Citizenship::Ukraine => "Украина".to_string(),
-            Citizenship::Other(s) => s,
-        }
-    }
-}
-
-impl From<String> for Citizenship {
-    fn from(s: String) -> Self {
-        match s.as_str() {
-            "Таджикистан" => Citizenship::Tajikistan,
-            "Узбекистан" => Citizenship::Uzbekistan,
-            "Казахстан" => Citizenship::Kazakhstan,
-            "Кыргызстан" => Citizenship::Kyrgyzstan,
-            "Армения" => Citizenship::Armenia,
-            "Беларусь" => Citizenship::Belarus,
-            "Украина" => Citizenship::Ukraine,
-            s => Citizenship::Other(s.into()),
-        }
-    }
-}
-
-impl Into<models::Citizenship> for Citizenship {
-    fn into(self) -> models::Citizenship {
-        match self {
-            Citizenship::Tajikistan => models::Citizenship::Tajikistan,
-            Citizenship::Uzbekistan => models::Citizenship::Uzbekistan,
-            Citizenship::Kazakhstan => models::Citizenship::Kazakhstan,
-            Citizenship::Kyrgyzstan => models::Citizenship::Kyrgyzstan,
-            Citizenship::Armenia => models::Citizenship::Armenia,
-            Citizenship::Belarus => models::Citizenship::Belarus,
-            Citizenship::Ukraine => models::Citizenship::Ukraine,
-            Citizenship::Other(s) => models::Citizenship::Other(s.into()),
-        }
-    }
-}
-
-impl From<models::Citizenship> for Citizenship {
-    fn from(s: models::Citizenship) -> Self {
-        match s {
-            models::Citizenship::Tajikistan => Citizenship::Tajikistan,
-            models::Citizenship::Uzbekistan => Citizenship::Uzbekistan,
-            models::Citizenship::Kazakhstan => Citizenship::Kazakhstan,
-            models::Citizenship::Kyrgyzstan => Citizenship::Kyrgyzstan,
-            models::Citizenship::Armenia => Citizenship::Armenia,
-            models::Citizenship::Belarus => Citizenship::Belarus,
-            models::Citizenship::Ukraine => Citizenship::Ukraine,
-            models::Citizenship::Other(s) => Citizenship::Other(s.into()),
-        }
-    }
-}
-
-impl From<models::User> for User {
-    fn from(user: models::User) -> Self {
+impl<const N: usize> From<&Slot<N>> for FreeSlotDTO {
+    fn from(s: &Slot<N>) -> Self {
         Self {
-            id: user.id().as_i64(),
-            username: user.username().as_str().to_string(),
-            full_name_lat: user.full_name_lat().as_str().to_string(),
-            full_name_cyr: user.full_name_cyr().as_str().to_string(),
-            citizenship: user.citizenship().clone().into(),
+            start: s.start(),
+            end: s.interval().end,
+        }
+    }
+}
+
+impl From<&Reservation> for ReservationDTO {
+    fn from(r: &Reservation) -> Self {
+        Self {
+            by: r.by().into(),
+            service: r.service().clone(),
+        }
+    }
+}
+
+impl From<&User> for UserDTO {
+    fn from(user: &User) -> Self {
+        Self {
+            id: user.id(),
+            username: user.username().clone(),
+            full_name_lat: user.full_name_lat().clone(),
+            full_name_cyr: user.full_name_cyr().clone(),
+            citizenship: user.citizenship().clone(),
             arrival_date: user.arrival_date().clone(),
         }
     }
 }
 
-impl<const N: usize> From<models::Slot<N>> for Slot {
-    fn from(slot: models::Slot<N>) -> Self {
+impl<const N: usize> From<&Slot<N>> for SlotDTO {
+    fn from(slot: &Slot<N>) -> Self {
         Self {
             start: slot.interval().start,
             end: slot.interval().end,
-            reserved_by: slot
-                .reserved_by()
-                .iter()
-                .map(|user| user.clone().into())
-                .collect(),
+            reservations: slot.reservations().iter().map(|r| r.into()).collect(),
         }
     }
 }

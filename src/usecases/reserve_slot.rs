@@ -1,9 +1,9 @@
 use chrono::{DateTime, Duration, Utc};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use crate::domain::Error;
 use crate::domain::interfaces::{AvailableSlotsProvider, SlotsRepository, UserProvider};
-use crate::domain::models::TelegramID;
+use crate::domain::models::{Service, UserID};
 use crate::domain::services::WorkingHoursPolicy;
 
 #[derive(Clone)]
@@ -13,9 +13,9 @@ where
 {
     duration: Duration,
     policy: WP,
-    user_provider: Arc<Mutex<dyn UserProvider>>,
-    provider: Arc<Mutex<dyn AvailableSlotsProvider<N>>>,
-    repos: Arc<Mutex<dyn SlotsRepository<N>>>,
+    user_provider: Arc<dyn UserProvider>,
+    provider: Arc<dyn AvailableSlotsProvider<N>>,
+    repos: Arc<dyn SlotsRepository<N>>,
 }
 
 impl<const N: usize, WP> ReserveSlotUseCase<N, WP>
@@ -25,9 +25,9 @@ where
     pub fn new(
         duration: Duration,
         policy: WP,
-        user_provider: Arc<Mutex<dyn UserProvider>>,
-        provider: Arc<Mutex<dyn AvailableSlotsProvider<N>>>,
-        repos: Arc<Mutex<dyn SlotsRepository<N>>>,
+        user_provider: Arc<dyn UserProvider>,
+        provider: Arc<dyn AvailableSlotsProvider<N>>,
+        repos: Arc<dyn SlotsRepository<N>>,
     ) -> Self {
         Self {
             duration,
@@ -38,16 +38,17 @@ where
         }
     }
 
-    pub async fn reserve_slot(&self, user_id: i64, time: DateTime<Utc>) -> Result<(), Error> {
-        let user_provider = self.user_provider.lock().unwrap();
-        let provider = self.provider.lock().unwrap();
-        let repos = self.repos.lock().unwrap();
-
-        let user = user_provider.user(TelegramID::new(user_id)).await?;
+    pub async fn reserve_slot(
+        &self,
+        user_id: UserID,
+        time: DateTime<Utc>,
+        service: Service,
+    ) -> Result<(), Error> {
+        let user = self.user_provider.user(user_id).await?;
 
         let date = time.date_naive();
         let slots = self.policy.generate_slots(date, self.duration)?;
-        let mut slots = provider.available_slots(slots).await?;
+        let mut slots = self.provider.available_slots(slots).await?;
         let res = slots.iter_mut().find(|slot| slot.interval().start == time);
 
         let slot = match res {
@@ -55,8 +56,8 @@ where
             None => return Err(Error::SlotNotFoundError),
         };
 
-        slot.reserve(&user)?;
-        repos.save_slot(slot).await?;
+        slot.reserve(user, service)?;
+        self.repos.save_slot(slot).await?;
         Ok(())
     }
 }

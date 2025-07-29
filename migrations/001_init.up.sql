@@ -1,3 +1,15 @@
+DO $$ BEGIN
+    CREATE TYPE SERVICE AS ENUM (
+        'initial_registration', 
+        'visa',
+        'insurance',
+        'visa_and_insurance',
+        'renewal_of_registration',
+        'renewal_of_visa',
+        'all'
+    );
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
 CREATE TABLE users (
     id                BIGINT      PRIMARY KEY,
     username          VARCHAR(32) UNIQUE NOT NULL,
@@ -9,6 +21,7 @@ CREATE TABLE users (
 
 CREATE TABLE reservations (
     slot_start TIMESTAMPTZ NOT NULL,
+    service    SERVICE     NOT NULL,
     user_id    BIGINT      NOT NULL,
 
     PRIMARY KEY (slot_start, user_id),

@@ -1,8 +1,7 @@
 use async_trait::async_trait;
-use chrono::{DateTime, Utc};
 
 use crate::domain::Error;
-use crate::domain::models::{Slot, TelegramID, User};
+use crate::domain::models::{Slot, User, UserID};
 
 #[async_trait]
 pub trait HasAvailableSlotsProvider<const N: usize>: Send + Sync {
@@ -21,7 +20,7 @@ pub trait ReservedSlotsProvider<const N: usize>: Send + Sync {
 
 #[async_trait]
 pub trait ReservedSlotProvider<const N: usize>: Send + Sync {
-    async fn reserved_slot(&self, datetime: DateTime<Utc>) -> Result<Slot<N>, Error>;
+    async fn reserved_slot(&self, slot: Slot<N>) -> Result<Slot<N>, Error>;
 }
 
 #[async_trait]
@@ -31,10 +30,10 @@ pub trait SlotsRepository<const N: usize>: Send + Sync {
 
 #[async_trait]
 pub trait UserProvider: Send + Sync {
-    async fn user(&self, id: TelegramID) -> Result<User, Error>;
+    async fn user(&self, id: UserID) -> Result<User, Error>;
 }
 
 #[async_trait]
 pub trait UserRepository: Send + Sync {
-    async fn save_user(&self, user: &User) -> Result<(), Error>;
+    async fn save_user(&self, user: User) -> Result<(), Error>;
 }

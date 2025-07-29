@@ -10,3 +10,9 @@ async-trait = "0.1.88"
 deadpool-postgres = "0.14.1"
 tokio-postgres = { version = "0.7.13", features = ["with-chrono-0_4"] }
 tokio = { version = "1.46.1", features = ["macros"] }
+teloxide = { version = "0.14.0", features = ["macros"] }
+serde = { version = "1.0.219", features = ["derive"] }
+log = "0.4.27"
+dotenv = "0.15.0"
+pretty_env_logger = "0.5.0"
+postgres-types = { version = "0.2.9", features = ["derive"] }
