@@ -166,7 +166,7 @@ mod slot_tests {
             Reservation::new(create_user(1), Service::All),
             Reservation::new(create_user(2), Service::RenewalOfRegistration),
             Reservation::new(create_user(3), Service::Visa),
-            Reservation::new(create_user(4), Service::Insurance),
+            Reservation::new(create_user(4), Service::InitialRegistration),
         ];
 
         // WHEN попытка восстановить слот на 3 места из значений
@@ -187,7 +187,7 @@ mod slot_tests {
         let user = create_user(1);
 
         // WHEN пользователь бронирует слот
-        let res = slot.reserve(user, Service::Insurance);
+        let res = slot.reserve(user, Service::RenewalOfVisa);
 
         // THEN попытка успешна
         assert!(res.is_ok());

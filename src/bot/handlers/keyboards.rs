@@ -73,8 +73,6 @@ pub fn service_to_str(s: &Service) -> &'static str {
     match s {
         Service::InitialRegistration => "Первичная регистрация",
         Service::Visa => "Получение визы",
-        Service::Insurance => "Страховка",
-        Service::VisaAndInsurance => "Виза и страховка",
         Service::RenewalOfRegistration => "Продление регистрации",
         Service::RenewalOfVisa => "Продление визы",
         Service::All => "Все услуги",
@@ -85,8 +83,6 @@ pub fn service_from_str(s: &str) -> Option<Service> {
     match s {
         "Первичная регистрация" => Some(Service::InitialRegistration),
         "Получение визы" => Some(Service::Visa),
-        "Страховка" => Some(Service::Insurance),
-        "Виза и страховка" => Some(Service::VisaAndInsurance),
         "Продление регистрации" => Some(Service::RenewalOfRegistration),
         "Продление визы" => Some(Service::RenewalOfVisa),
         "Все услуги" => Some(Service::All),

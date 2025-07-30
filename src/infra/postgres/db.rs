@@ -49,8 +49,6 @@ impl TryInto<User> for RawUser {
 enum Service {
     InitialRegistration,
     Visa,
-    Insurance,
-    VisaAndInsurance,
     RenewalOfRegistration,
     RenewalOfVisa,
     All,
@@ -61,8 +59,6 @@ impl Into<DomainService> for Service {
         match self {
             Service::InitialRegistration => DomainService::InitialRegistration,
             Service::Visa => DomainService::Visa,
-            Service::Insurance => DomainService::Insurance,
-            Service::VisaAndInsurance => DomainService::VisaAndInsurance,
             Service::RenewalOfRegistration => DomainService::RenewalOfRegistration,
             Service::RenewalOfVisa => DomainService::RenewalOfVisa,
             Service::All => DomainService::All,
@@ -75,8 +71,6 @@ impl From<DomainService> for Service {
         match s {
             DomainService::InitialRegistration => Service::InitialRegistration,
             DomainService::Visa => Service::Visa,
-            DomainService::Insurance => Service::Insurance,
-            DomainService::VisaAndInsurance => Service::VisaAndInsurance,
             DomainService::RenewalOfRegistration => Service::RenewalOfRegistration,
             DomainService::RenewalOfVisa => Service::RenewalOfVisa,
             DomainService::All => Service::All,

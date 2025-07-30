@@ -2,8 +2,6 @@ DO $$ BEGIN
     CREATE TYPE SERVICE AS ENUM (
         'initial_registration', 
         'visa',
-        'insurance',
-        'visa_and_insurance',
         'renewal_of_registration',
         'renewal_of_visa',
         'all'
