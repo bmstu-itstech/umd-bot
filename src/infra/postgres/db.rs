@@ -364,14 +364,6 @@ pub fn fetch_raw_user(row: &Row) -> Result<RawUser, tokio_postgres::Error> {
     })
 }
 
-pub fn fetch_raw_reservation(row: &Row) -> Result<RawReservation, tokio_postgres::Error> {
-    Ok(RawReservation {
-        slot_start: row.try_get("slot_start")?,
-        service: row.try_get("service")?,
-        user_id: row.try_get("user_id")?,
-    })
-}
-
 pub fn fetch_raw_reservation_with_user(
     row: &Row,
 ) -> Result<RawReservationWithUser, tokio_postgres::Error> {

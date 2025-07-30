@@ -2,7 +2,6 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use deadpool_postgres::Pool;
 use std::collections::HashMap;
-use std::pin::Pin;
 use tokio_postgres::{Client, GenericClient, Transaction};
 
 use crate::domain::Error;
@@ -25,19 +24,6 @@ pub struct PostgresRepository {
 impl PostgresRepository {
     pub fn new(pool: Pool) -> PostgresRepository {
         PostgresRepository { pool }
-    }
-
-    pub async fn with_client<F, R>(&self, f: F) -> Result<R, Error>
-    where
-        F: FnOnce(&Client) -> Pin<Box<dyn Future<Output = Result<R, Error>> + '_>>,
-    {
-        let obj = self
-            .pool
-            .get()
-            .await
-            .map_err(|err| Error::Other(err.into()))?;
-        let client = obj.client();
-        f(client).await
     }
 }
 

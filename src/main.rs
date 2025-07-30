@@ -3,7 +3,6 @@ use dotenv::dotenv;
 use std::env;
 use std::sync::Arc;
 use teloxide::Bot;
-use tokio::sync::Mutex;
 
 use crate::dispatcher::UmdDispatcher;
 use crate::domain::models::{ClosedRange, UserID};

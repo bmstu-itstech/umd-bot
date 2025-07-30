@@ -34,11 +34,6 @@ impl DeadlinePolicy for StandardDeadlinePolicy {
 #[cfg(test)]
 mod default_deadline_policy_tests {
     use super::*;
-    use crate::domain::services::Mon2FriWorkingHoursPolicy;
-
-    fn setup_default_working_policy() -> Mon2FriWorkingHoursPolicy {
-        Mon2FriWorkingHoursPolicy::default()
-    }
 
     #[test]
     fn test_deadlines() {

@@ -7,7 +7,6 @@ mod user;
 
 pub use citizenship::*;
 pub use closed_range::*;
-pub use reservation::*;
 pub use service::*;
 pub use slot::*;
 pub use user::*;

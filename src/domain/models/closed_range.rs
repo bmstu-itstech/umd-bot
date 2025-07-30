@@ -48,14 +48,6 @@ where
     pub fn overlaps(&self, other: &ClosedRange<T>) -> bool {
         self.start < other.end && self.end > other.start
     }
-
-    pub fn is_disjoint(&self, other: &ClosedRange<T>) -> bool {
-        !self.overlaps(other)
-    }
-
-    pub fn separate_with(&self, other: &ClosedRange<T>) -> bool {
-        self.is_disjoint(other) && !self.contains(other) && !other.contains(self)
-    }
 }
 
 impl Iterator for ClosedRangeIter<NaiveDate> {
