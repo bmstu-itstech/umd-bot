@@ -1,11 +1,8 @@
-use crate::usecases::{
-    CancelReservationUseCase, CheckDeadlineUseCase, CheckRegisteredUseCase,
-    DaysWithFreeSlotsUseCase, FreeSlotsUseCase, GetUserUseCase, RegisterUserUseCase,
-    ReserveSlotUseCase, SlotsUseCase, UpdateUserUseCase,
-};
+use crate::usecases::{CancelReservationUseCase, CheckDeadlineUseCase, CheckRegisteredUseCase, DaysWithFreeSlotsUseCase, FreeSlotsUseCase, GetUserUseCase, RegisterUserUseCase, ReserveSlotUseCase, ReservationsUseCase, UpdateUserUseCase, CheckAdminUseCase};
 
 pub struct App {
     pub cancel_reservation: CancelReservationUseCase,
+    pub check_admin: CheckAdminUseCase,
     pub check_deadline: CheckDeadlineUseCase,
     pub check_registered: CheckRegisteredUseCase,
     pub days_with_free_slots: DaysWithFreeSlotsUseCase,
@@ -13,6 +10,6 @@ pub struct App {
     pub get_user: GetUserUseCase,
     pub register_user: RegisterUserUseCase,
     pub reserve_slot: ReserveSlotUseCase,
-    pub slots: SlotsUseCase,
+    pub slots: ReservationsUseCase,
     pub update_user: UpdateUserUseCase,
 }

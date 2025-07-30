@@ -37,3 +37,8 @@ pub trait UserProvider: Send + Sync {
 pub trait UserRepository: Send + Sync {
     async fn save_user(&self, user: User) -> Result<(), Error>;
 }
+
+#[async_trait]
+pub trait AdminProvider: Send + Sync {
+    async fn is_admin(&self, id: UserID) -> Result<bool, Error>;
+}

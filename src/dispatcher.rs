@@ -3,7 +3,7 @@ use teloxide::dispatching::{DefaultKey, UpdateHandler};
 use teloxide::dptree::entry;
 use teloxide::prelude::Dispatcher;
 use teloxide::{Bot, dptree};
-
+use crate::bot::handlers::admin::{admin_schema, AdminState};
 use crate::bot::handlers::user::{
     RegistrationState, SlotsState, UpdateState, registration_schema, slots_schema, update_schema,
     view_schema,
@@ -18,6 +18,7 @@ impl UmdDispatcher {
         Dispatcher::builder(bot, Self::scheme())
             .dependencies(dptree::deps![
                 app.cancel_reservation,
+                app.check_admin,
                 app.check_deadline,
                 app.check_registered,
                 app.days_with_free_slots,
@@ -29,7 +30,8 @@ impl UmdDispatcher {
                 app.update_user,
                 InMemStorage::<RegistrationState>::new(),
                 InMemStorage::<UpdateState>::new(),
-                InMemStorage::<SlotsState>::new()
+                InMemStorage::<SlotsState>::new(),
+                InMemStorage::<AdminState>::new()
             ])
             .default_handler(|upd| async move {
                 log::warn!("Unhandled update: {:?}", upd);
@@ -40,9 +42,10 @@ impl UmdDispatcher {
 
     fn scheme() -> UpdateHandler<Error> {
         entry()
-            .branch(registration_schema())
+            .branch(slots_schema())
             .branch(update_schema())
             .branch(view_schema())
-            .branch(slots_schema())
+            .branch(registration_schema())
+            .branch(admin_schema())
     }
 }

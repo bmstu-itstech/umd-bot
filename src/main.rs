@@ -6,16 +6,12 @@ use teloxide::Bot;
 use tokio::sync::Mutex;
 
 use crate::dispatcher::UmdDispatcher;
-use crate::domain::models::ClosedRange;
+use crate::domain::models::{ClosedRange, UserID};
 use crate::domain::services::{
     FixedSlotsFactory, Mon2ThuAndFriWithLunchWorkingHoursPolicy, StandardDeadlinePolicy,
 };
-use crate::infra::PostgresRepository;
-use crate::usecases::{
-    App, CancelReservationUseCase, CheckDeadlineUseCase, CheckRegisteredUseCase,
-    DaysWithFreeSlotsUseCase, FreeSlotsUseCase, GetUserUseCase, RegisterUserUseCase,
-    ReserveSlotUseCase, SlotsUseCase, UpdateUserUseCase,
-};
+use crate::infra::{MockAdminProvider, PostgresRepository};
+use crate::usecases::{App, CancelReservationUseCase, CheckDeadlineUseCase, CheckRegisteredUseCase, DaysWithFreeSlotsUseCase, FreeSlotsUseCase, GetUserUseCase, RegisterUserUseCase, ReserveSlotUseCase, ReservationsUseCase, UpdateUserUseCase, CheckAdminUseCase};
 use crate::utils::postgres::pool;
 
 mod bot;
@@ -35,6 +31,14 @@ async fn main() {
         pool::connect(&uri).expect(format!("unable to connect to database: {}", uri).as_str());
     log::info!("Connected to PostgreSQL database: {}", uri);
 
+    let admin_ids_str = env::var("ADMIN_IDS").unwrap_or_default();
+    let admin_ids: Vec<UserID> = admin_ids_str
+        .split(",")
+        .into_iter()
+        .map(|s| UserID::new(s.parse::<i64>().expect("unable to parse user ids")))
+        .collect();
+        
+    let admin_provider = Arc::new(MockAdminProvider::new(admin_ids));
     let slots_factory = Arc::new(FixedSlotsFactory::new(3, Duration::minutes(20)));
     let deadline_policy = Arc::new(StandardDeadlinePolicy::default());
     let working_hours_policy = Arc::new(Mon2ThuAndFriWithLunchWorkingHoursPolicy::new(
@@ -59,6 +63,7 @@ async fn main() {
             repos.clone(),
             repos.clone(),
         ),
+        check_admin: CheckAdminUseCase::new(admin_provider.clone()),
         check_deadline: CheckDeadlineUseCase::new(deadline_policy.clone(), repos.clone()),
         check_registered: CheckRegisteredUseCase::new(repos.clone()),
         days_with_free_slots: DaysWithFreeSlotsUseCase::new(
@@ -82,7 +87,7 @@ async fn main() {
             repos.clone(),
             repos.clone(),
         ),
-        slots: SlotsUseCase::new(
+        slots: ReservationsUseCase::new(
             slots_factory.clone(),
             working_hours_policy.clone(),
             repos.clone(),
