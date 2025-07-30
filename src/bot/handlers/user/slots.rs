@@ -328,6 +328,16 @@ async fn receive_approval(
                     .await?;
                     dialogue.exit().await?;
                 }
+                Err(Error::SlotAlreadyReserved(_)) => {
+                    bot.send_message(
+                        msg.chat.id,
+                        "❌ <b>Ошибка бронирования</b>\n\
+                        Слот уже забронирован Вами. Попробуйте снова: /reserve",
+                    )
+                        .parse_mode(ParseMode::Html)
+                        .await?;
+                    dialogue.exit().await?;
+                }
                 Err(e) => return Err(e.into()),
             }
         }

@@ -40,6 +40,9 @@ impl Slot {
         if self.reservations.len() >= self.max_size {
             return Err(Error::MaxCapacityExceeded(self.max_size));
         }
+        if self.reservations.iter().find(|r| r.by().id() == user.id()).is_some() {
+            return Err(Error::SlotAlreadyReserved(user.id()));
+        }
         self.reservations.push(Reservation::new(user, service));
         Ok(())
     }
@@ -86,10 +89,6 @@ impl Slot {
 
     pub fn reserved(&self) -> usize {
         self.reservations.len()
-    }
-
-    pub fn available(&self) -> usize {
-        self.max_size - self.reservations().len()
     }
 }
 
@@ -222,5 +221,27 @@ mod slot_tests {
 
         // THEN слот всё ещё забронирован только 3 пользователями
         assert_eq!(slot.reserved(), 3);
+    }
+    
+    #[test]
+    fn test_slot_reserving_twice() {
+        // GIVEN заданный интервал времени
+        // GIVEN слот на 2 места, занятый одним пользователем
+        // GIVEN четвёртый пользователь
+        let interval = interval_with_hours(1, 2, Utc);
+        let user = create_user(1);
+        let reservations = vec![
+            Reservation::new(user.clone(), Service::All),
+        ];
+        let mut slot = Slot::restore(interval, &reservations, 2).unwrap();
+
+        // WHEN тот же пользователь бронирует слот
+        let result = slot.reserve(user, Service::InitialRegistration);
+
+        // THEN ошибка повторного бронирования
+        assert!(matches!(result, Err(Error::SlotAlreadyReserved(_))));
+
+        // THEN слот всё ещё забронирован на одно место
+        assert_eq!(slot.reserved(), 1);
     }
 }

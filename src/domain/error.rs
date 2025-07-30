@@ -7,14 +7,8 @@ pub enum Error {
     #[error("invalid value: {0}")]
     InvalidValue(String),
 
-    #[error("invalid interval: {0}")]
-    InvalidInterval(String),
-
     #[error("max capacity={0} exceeded")]
     MaxCapacityExceeded(usize),
-
-    #[error("student already exists: {0}")]
-    UserAlreadyExists(UserID),
 
     #[error("student not found: {0}")]
     UserNotFound(UserID),
@@ -24,6 +18,9 @@ pub enum Error {
 
     #[error("slot not found")]
     SlotNotFoundError,
+    
+    #[error("slot already reserved by user")]
+    SlotAlreadyReserved(UserID),
 
     #[error(transparent)]
     Other(#[from] StdError),
