@@ -122,6 +122,7 @@ async fn receive_full_name_lat(
                     "✏️ <b>Введите ФИО кириллицей</b>\n\
                      Пример: <i>Иванов Иван Иванович</i>",
                 )
+                .parse_mode(ParseMode::Html)
                 .await?;
                 dialogue
                     .update(RegistrationState::AwaitingFullNameCyr(name))
