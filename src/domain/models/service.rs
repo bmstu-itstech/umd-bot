@@ -1,6 +1,7 @@
 use crate::domain::Error;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum Service {
     InitialRegistration,
     Visa,
@@ -22,7 +23,7 @@ impl Service {
             _ => false,
         }
     }
-    
+
     pub fn all() -> &'static [Service] {
         &[
             Service::InitialRegistration,

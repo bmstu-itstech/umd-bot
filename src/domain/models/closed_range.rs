@@ -64,7 +64,7 @@ impl Iterator for ClosedRangeIter<NaiveDate> {
     fn next(&mut self) -> Option<Self::Item> {
         let current = self.current.take()?;
         if current < self.end {
-            self.current = Some(current);
+            self.current = current.succ_opt();
             Some(current)
         } else {
             None

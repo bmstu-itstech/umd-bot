@@ -48,18 +48,18 @@ impl SlotsFactory for FixedSlotsFactory {
 #[cfg(test)]
 mod fixed_slots_factory_tests {
     use super::*;
-    use chrono::NaiveDate;
     use crate::domain::services::Mon2ThuAndFriWithLunchWorkingHoursPolicy;
-    
+    use chrono::NaiveDate;
+
     #[test]
     fn test_no_slots_in_weekend() {
         // GIVEN слоты размером 3 и длительностью 20 минут.
         let factory = FixedSlotsFactory::new(3, Duration::minutes(20));
         let wp = Mon2ThuAndFriWithLunchWorkingHoursPolicy::default();
-        
+
         // WHEN выходной день
         let date = NaiveDate::from_ymd_opt(2025, 7, 12).unwrap();
-        
+
         // THEN слотов для записи не будет
         let slots = factory.create_all(date, &wp);
         assert!(slots.is_empty());

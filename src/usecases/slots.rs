@@ -13,8 +13,7 @@ pub struct SlotsUseCase {
     provider: Arc<dyn ReservedSlotsProvider>,
 }
 
-impl SlotsUseCase
-{
+impl SlotsUseCase {
     pub fn new(
         factory: Arc<dyn SlotsFactory>,
         policy: Arc<dyn WorkingHoursPolicy>,

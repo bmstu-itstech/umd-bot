@@ -86,7 +86,7 @@ impl From<DomainService> for Service {
 
 pub struct RawReservation {
     slot_start: DateTime<Utc>,
-    service: String,
+    service: Service,
     user_id: i64,
 }
 
@@ -188,7 +188,7 @@ pub async fn batch_insert_raw_reservations<C: GenericClient>(
         .map_err(|err| Error::Other(err.into()))?;
     for r in reservations {
         client
-            .execute(&stmt, &[&r.slot_start, &r.service.as_str(), &r.user_id])
+            .execute(&stmt, &[&r.slot_start, &r.service, &r.user_id])
             .await
             .map_err(|err| Error::Other(err.into()))?;
     }
@@ -198,9 +198,11 @@ pub async fn batch_insert_raw_reservations<C: GenericClient>(
 pub async fn select_slot_raw_reservations_with_user<C: GenericClient>(
     client: &C,
     slot_start: DateTime<Utc>,
+    max_size: i64,
 ) -> Result<Vec<RawReservationWithUser>, Error> {
     let query = r#"
         SELECT
+            r.slot_start,
             r.service,
             u.id,
             u.username,
@@ -209,14 +211,16 @@ pub async fn select_slot_raw_reservations_with_user<C: GenericClient>(
             u.citizenship,
             u.arrival_date
         FROM reservations AS r
-        LEFT JOIN users AS u
+        LEFT JOIN 
+            users AS u
+            ON u.id = r.user_id
         WHERE
-            r.start = $1
+            r.slot_start = $1
         LIMIT $2
     "#;
 
     let rows = client
-        .query(query, &[&slot_start])
+        .query(query, &[&slot_start, &max_size])
         .await
         .map_err(|err| Error::Other(err.into()))?;
 
@@ -289,6 +293,8 @@ pub async fn select_available_raw_reservations_with_user<C: GenericClient>(
            INNER JOIN
                users AS u
                ON u.id = r.user_id
+           ORDER BY
+               r.slot_start ASC
         "#,
         working_slots_start.join(", ")
     );

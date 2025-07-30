@@ -5,7 +5,8 @@ use teloxide::prelude::Dispatcher;
 use teloxide::{Bot, dptree};
 
 use crate::bot::handlers::user::{
-    RegistrationState, UpdateState, registration_schema, update_schema, view_schema,
+    RegistrationState, SlotsState, UpdateState, registration_schema, slots_schema, update_schema,
+    view_schema,
 };
 use crate::domain::Error;
 use crate::usecases::App;
@@ -27,7 +28,8 @@ impl UmdDispatcher {
                 app.slots,
                 app.update_user,
                 InMemStorage::<RegistrationState>::new(),
-                InMemStorage::<UpdateState>::new()
+                InMemStorage::<UpdateState>::new(),
+                InMemStorage::<SlotsState>::new()
             ])
             .default_handler(|upd| async move {
                 log::warn!("Unhandled update: {:?}", upd);
@@ -41,5 +43,6 @@ impl UmdDispatcher {
             .branch(registration_schema())
             .branch(update_schema())
             .branch(view_schema())
+            .branch(slots_schema())
     }
 }

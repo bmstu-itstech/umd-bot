@@ -1,11 +1,11 @@
-use teloxide::dispatching::UpdateHandler;
-use teloxide::macros::BotCommands;
-use teloxide::prelude::*;
-
 use crate::bot::handlers::fsm::HandlerResult;
 use crate::domain::Error;
 use crate::domain::models::UserID;
 use crate::usecases::GetUserUseCase;
+use teloxide::dispatching::UpdateHandler;
+use teloxide::macros::BotCommands;
+use teloxide::prelude::*;
+use teloxide::types::ParseMode;
 
 #[derive(BotCommands, Clone)]
 #[command(description = "Команды профиля")]
@@ -22,7 +22,7 @@ pub async fn handle_view_command(
     match use_case.user(UserID::new(msg.chat.id.0)).await {
         Ok(user) => {
             let text = format!(
-                "📋 Ваши данные:\n\n\
+                "📋 <b>Ваши данные</b>\n\
                 👤 Имя (лат): {}\n\
                 👤 Имя (кир): {}\n\
                 🌍 Гражданство: {}\n\
@@ -30,9 +30,11 @@ pub async fn handle_view_command(
                 user.full_name_lat.as_str(),
                 user.full_name_cyr.as_str(),
                 user.citizenship.as_str(),
-                user.arrival_date.format("%Y.%m.%d"),
+                user.arrival_date.format("%d.%m.%Y"),
             );
-            bot.send_message(msg.chat.id, text).await?;
+            bot.send_message(msg.chat.id, text)
+                .parse_mode(ParseMode::Html)
+                .await?;
         }
         Err(Error::UserNotFound(_)) => {
             bot.send_message(
@@ -41,10 +43,7 @@ pub async fn handle_view_command(
             )
             .await?;
         }
-        Err(_) => {
-            bot.send_message(msg.chat.id, "❌ Упс! Что-то пошло не так")
-                .await?;
-        }
+        Err(e) => return Err(e),
     }
     Ok(())
 }

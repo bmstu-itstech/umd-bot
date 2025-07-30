@@ -4,11 +4,11 @@ use teloxide::dispatching::dialogue::InMemStorage;
 use teloxide::dispatching::{UpdateHandler, dialogue};
 use teloxide::macros::BotCommands;
 use teloxide::prelude::*;
-use teloxide::types::KeyboardRemove;
+use teloxide::types::{KeyboardRemove, ParseMode};
 
 use crate::bot::handlers::fsm::HandlerResult;
 use crate::bot::handlers::keyboards::{
-    self, make_citizenship_keyboard, make_field_selection_keyboard, make_skip_keyboard,
+    self, make_citizenship_keyboard, make_field_selection_keyboard,
 };
 use crate::domain::Error;
 use crate::domain::models::{Citizenship, OnlyCyrillic, OnlyLatin, UserID};
@@ -48,18 +48,17 @@ async fn handle_update_command(
     if !registered {
         bot.send_message(
             msg.chat.id,
-            "Для начала пройдите регистрацию!\n\
-            Используйте для этого команду /start.",
+            "⚠️ <b>Сначала зарегистрируйтесь!</b>\n\
+             Введите /start для начала.",
         )
+        .parse_mode(ParseMode::Html)
         .await?;
         return Ok(());
     }
-    bot.send_message(
-        msg.chat.id,
-        "Выберите информацию о себе, которую Вы хотите обновить:",
-    )
-    .reply_markup(make_field_selection_keyboard())
-    .await?;
+    bot.send_message(msg.chat.id, "🔄 <b>Что хотите обновить?</b>")
+        .parse_mode(ParseMode::Html)
+        .reply_markup(make_field_selection_keyboard())
+        .await?;
     dialogue.update(UpdateState::AwaitingFieldSelection).await?;
     Ok(())
 }
@@ -72,17 +71,28 @@ async fn receive_field_selection(
     match msg.text() {
         Some(text) => match text {
             keyboards::FIELD_NAME_LAT_BTN => {
-                bot.send_message(msg.chat.id, "Введите новое имя латиницей")
-                    .await?;
+                bot.send_message(
+                    msg.chat.id,
+                    "✏️ <b>Введите новое ФИО латиницей</b>\n\
+                     Пример: <i>Ivanov Ivan Ivanovich</i>",
+                )
+                .parse_mode(ParseMode::Html)
+                .await?;
                 dialogue.update(UpdateState::AwaitingFullNameLat).await?;
             }
             keyboards::FIELD_NAME_CYR_BTN => {
-                bot.send_message(msg.chat.id, "Введите новое имя кириллицей")
-                    .await?;
+                bot.send_message(
+                    msg.chat.id,
+                    "✏️ <b>Введите новое ФИО кириллицей</b>\n\
+                     Пример: <i>Иванов Иван Иванович</i>",
+                )
+                .parse_mode(ParseMode::Html)
+                .await?;
                 dialogue.update(UpdateState::AwaitingFullNameCyr).await?;
             }
             keyboards::FIELD_CITIZENSHIP_BTN => {
-                bot.send_message(msg.chat.id, "Выберите новое гражданство")
+                bot.send_message(msg.chat.id, "🌍 <b>Выберите новое гражданство</b>")
+                    .parse_mode(ParseMode::Html)
                     .reply_markup(make_citizenship_keyboard())
                     .await?;
                 dialogue.update(UpdateState::AwaitingCitizenship).await?;
@@ -90,20 +100,26 @@ async fn receive_field_selection(
             keyboards::FIELD_ARRIVAL_DATE_BTN => {
                 bot.send_message(
                     msg.chat.id,
-                    "Выберите новую дату прибытия (в формате ГГГГ.ММ.ДД)",
+                    "📅 <b>Введите дату прибытия</b>\n\
+                    В формате ДД.ММ.ГГГГ",
                 )
-                .reply_markup(make_skip_keyboard())
+                .parse_mode(ParseMode::Html)
                 .await?;
                 dialogue.update(UpdateState::AwaitingArrivalDate).await?;
             }
             _ => {
-                bot.send_message(msg.chat.id, "Выберите один из предложенных вариантов")
-                    .reply_markup(make_field_selection_keyboard())
-                    .await?;
+                bot.send_message(
+                    msg.chat.id,
+                    "❌ <b>Ошибка ввода</b>\n\
+                    Используйте клавиатуру для ввода.",
+                )
+                .parse_mode(ParseMode::Html)
+                .reply_markup(make_field_selection_keyboard())
+                .await?;
             }
         },
         None => {
-            bot.send_message(msg.chat.id, "Пожалуйста, введите текстовое сообщение")
+            bot.send_message(msg.chat.id, "📝 Введите текстовое сообщение")
                 .reply_markup(make_field_selection_keyboard())
                 .await?;
         }
@@ -121,16 +137,22 @@ async fn receive_full_name_lat(
         Some(text) => match OnlyLatin::new(text) {
             Ok(name) => {
                 use_case.update_name_lat(msg.chat.id.0, name).await?;
-                bot.send_message(msg.chat.id, "✅ Имя на латинице обновлено")
+                bot.send_message(msg.chat.id, "✅ Имя на латинице изменено!")
                     .await?;
                 dialogue.exit().await?;
             }
             Err(_) => {
-                bot.send_message(msg.chat.id, "Некорректный ввод!").await?;
+                bot.send_message(
+                    msg.chat.id,
+                    "❌ <b>Ошибка ввода</b>\n\
+                     Допустимы только латинские символы. Попробуйте еще раз.",
+                )
+                .parse_mode(ParseMode::Html)
+                .await?;
             }
         },
         None => {
-            bot.send_message(msg.chat.id, "Пожалуйста, введите текстовое сообщение")
+            bot.send_message(msg.chat.id, "📝 Введите текстовое сообщение")
                 .await?;
         }
     }
@@ -147,16 +169,22 @@ async fn receive_full_name_cyr(
         Some(text) => match OnlyCyrillic::new(text) {
             Ok(name) => {
                 use_case.update_name_cyr(msg.chat.id.0, name).await?;
-                bot.send_message(msg.chat.id, "✅ Имя на кириллице обновлено")
+                bot.send_message(msg.chat.id, "✅ Имя на кириллице изменено!")
                     .await?;
                 dialogue.exit().await?;
             }
             Err(_) => {
-                bot.send_message(msg.chat.id, "Некорректный ввод!").await?;
+                bot.send_message(
+                    msg.chat.id,
+                    "❌ <b>Ошибка ввода</b>\n\
+                     Допустимы только кириллические символы. Попробуйте еще раз.",
+                )
+                .parse_mode(ParseMode::Html)
+                .await?;
             }
         },
         None => {
-            bot.send_message(msg.chat.id, "Пожалуйста, введите текстовое сообщение")
+            bot.send_message(msg.chat.id, "📝 Введите текстовое сообщение")
                 .await?;
         }
     }
@@ -172,7 +200,7 @@ async fn receive_citizenship(
     let text = match msg.text() {
         Some(t) => t,
         None => {
-            bot.send_message(msg.chat.id, "Пожалуйста, используйте клавиатуру")
+            bot.send_message(msg.chat.id, "📝 Введите текстовое сообщение")
                 .reply_markup(make_citizenship_keyboard())
                 .await?;
             return Ok(());
@@ -188,7 +216,8 @@ async fn receive_citizenship(
         "Беларусь" => Citizenship::Belarus,
         "Украина" => Citizenship::Ukraine,
         "Другое" => {
-            bot.send_message(msg.chat.id, "Введите ваше гражданство:")
+            bot.send_message(msg.chat.id, "🌍 <b>Выберите гражданство</b>")
+                .parse_mode(ParseMode::Html)
                 .reply_markup(KeyboardRemove::new())
                 .await?;
             dialogue
@@ -197,16 +226,21 @@ async fn receive_citizenship(
             return Ok(());
         }
         _ => {
-            bot.send_message(msg.chat.id, "Пожалуйста, выберите вариант из клавиатуры")
-                .reply_markup(make_citizenship_keyboard())
-                .await?;
+            bot.send_message(
+                msg.chat.id,
+                "❌ <b>Ошибка ввода</b>\n\
+                Используйте клавиатуру для ввода.",
+            )
+            .parse_mode(ParseMode::Html)
+            .reply_markup(make_citizenship_keyboard())
+            .await?;
             return Ok(());
         }
     };
     use_case
         .update_citizenship(msg.chat.id.0, citizenship)
         .await?;
-    bot.send_message(msg.chat.id, "✅ Гражданство обновлено")
+    bot.send_message(msg.chat.id, "✅ Гражданство изменено!")
         .reply_markup(KeyboardRemove::new())
         .await?;
     dialogue.exit().await?;
@@ -222,7 +256,7 @@ async fn receive_other_citizenship(
     let other = match msg.text() {
         Some(t) => t,
         None => {
-            bot.send_message(msg.chat.id, "Пожалуйста, введите текст")
+            bot.send_message(msg.chat.id, "📝 Введите текстовое сообщение")
                 .await?;
             return Ok(());
         }
@@ -230,6 +264,9 @@ async fn receive_other_citizenship(
     let citizenship = Citizenship::Other(other.to_string());
     use_case
         .update_citizenship(msg.chat.id.0, citizenship)
+        .await?;
+    bot.send_message(msg.chat.id, "✅ Гражданство изменено!")
+        .reply_markup(KeyboardRemove::new())
         .await?;
     dialogue.exit().await?;
     Ok(())
@@ -244,23 +281,28 @@ async fn receive_arrival_date(
     let date_str = match msg.text() {
         Some(t) => t,
         None => {
-            bot.send_message(msg.chat.id, "Пожалуйста, введите дату")
+            bot.send_message(msg.chat.id, "📝 Введите текстовое сообщение")
                 .await?;
             return Ok(());
         }
     };
-    let arrival_date = match NaiveDate::parse_from_str(date_str, "%Y.%m.%d") {
+    let arrival_date = match NaiveDate::parse_from_str(date_str, "%d.%m.%Y") {
         Ok(arrival_date) => arrival_date,
         Err(_) => {
-            bot.send_message(msg.chat.id, "Неверный формат даты. Используйте ГГГГ-ММ-ДД")
-                .await?;
+            bot.send_message(
+                msg.chat.id,
+                "❌ <b>Неверный формат</b>\n\
+                Введите дату в формате ДД.ММ.ГГГГ.",
+            )
+            .parse_mode(ParseMode::Html)
+            .await?;
             return Ok(());
         }
     };
     use_case
         .update_arrival_date(msg.chat.id.0, arrival_date)
         .await?;
-    bot.send_message(msg.chat.id, "✅ Дата прибытия обновлена!")
+    bot.send_message(msg.chat.id, "✅ Дата прибытия изменена!")
         .await?;
     dialogue.exit().await?;
     Ok(())

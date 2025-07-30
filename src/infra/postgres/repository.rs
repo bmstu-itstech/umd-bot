@@ -70,10 +70,12 @@ impl AvailableSlotsProvider for PostgresRepository {
                 slot.reserve(user, service)?;
             }
 
-            let reserved_slots = slots
+            let mut reserved_slots: Vec<_> = slots
                 .into_values()
                 .filter(|slot| slot.is_available())
                 .collect();
+
+            reserved_slots.sort_by_key(|slot| slot.start());
 
             Ok(reserved_slots)
         })
@@ -110,7 +112,12 @@ impl ReservedSlotsProvider for PostgresRepository {
 impl ReservedSlotProvider for PostgresRepository {
     async fn reserved_slot(&self, mut slot: Slot) -> Result<Slot, Error> {
         with_client!(self.pool, async |client| {
-            let raw = select_slot_raw_reservations_with_user(client, slot.start()).await?;
+            let raw = select_slot_raw_reservations_with_user(
+                client,
+                slot.start(),
+                slot.max_size() as i64,
+            )
+            .await?;
             for r in raw {
                 let (_, service, user) = r.try_unpack()?;
                 slot.reserve(user, service)?;

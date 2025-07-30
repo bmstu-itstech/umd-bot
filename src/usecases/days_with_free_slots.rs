@@ -1,4 +1,4 @@
-use chrono::{Days, NaiveDate};
+use chrono::{Days, NaiveDate, Utc};
 use std::ops::Add;
 use std::sync::Arc;
 
@@ -7,7 +7,7 @@ use crate::domain::interfaces::{HasAvailableSlotsProvider, UserProvider};
 use crate::domain::models::{ClosedRange, Service, UserID};
 use crate::domain::services::{DeadlinePolicy, SlotsFactory, WorkingHoursPolicy};
 
-const MAX_DAYS_BEFORE_RESERVE: Days = Days::new(30);
+const MAX_DAYS_BEFORE_RESERVE: Days = Days::new(14);
 
 #[derive(Clone)]
 pub struct DaysWithFreeSlotsUseCase {
@@ -38,17 +38,17 @@ impl DaysWithFreeSlotsUseCase {
     pub async fn days_with_free_slots(
         &self,
         user_id: UserID,
-        date: NaiveDate,
         service: Service,
     ) -> Result<Vec<NaiveDate>, Error> {
         let user = self.user_provider.user(user_id).await?;
+        let start = Utc::now().naive_utc().date();
         let end = if service.has_deadline() {
-            date.add(self.deadline_policy.deadline(user.citizenship()))
+            start.add(self.deadline_policy.deadline(user.citizenship()))
         } else {
-            date.add(MAX_DAYS_BEFORE_RESERVE)
+            start.add(MAX_DAYS_BEFORE_RESERVE)
         };
 
-        let range = ClosedRange { start: date, end };
+        let range = ClosedRange { start, end };
 
         let mut result = Vec::new();
         for date in range.into_iter() {
@@ -56,7 +56,7 @@ impl DaysWithFreeSlotsUseCase {
                 .factory
                 .create_all(date, self.working_hours_policy.as_ref());
 
-            if self.provider.has_available_slots(&slots).await? {
+            if !slots.is_empty() && self.provider.has_available_slots(&slots).await? {
                 result.push(date);
             }
         }

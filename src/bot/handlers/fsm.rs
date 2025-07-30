@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use teloxide::RequestError;
-use teloxide::dispatching::dialogue::{InMemStorageError};
+use teloxide::dispatching::dialogue::InMemStorageError;
 
 use crate::domain::Error;
 

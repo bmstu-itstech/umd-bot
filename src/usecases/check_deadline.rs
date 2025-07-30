@@ -7,14 +7,12 @@ use crate::domain::models::{Service, UserID};
 use crate::domain::services::DeadlinePolicy;
 
 #[derive(Clone)]
-pub struct CheckDeadlineUseCase
-{
+pub struct CheckDeadlineUseCase {
     deadline_policy: Arc<dyn DeadlinePolicy>,
     provider: Arc<dyn UserProvider>,
 }
 
-impl CheckDeadlineUseCase
-{
+impl CheckDeadlineUseCase {
     pub fn new(deadline_policy: Arc<dyn DeadlinePolicy>, provider: Arc<dyn UserProvider>) -> Self {
         Self {
             deadline_policy,
@@ -32,6 +30,6 @@ impl CheckDeadlineUseCase
             .arrival_date()
             .checked_add_days(self.deadline_policy.deadline(user.citizenship()))
             .unwrap();
-        Ok(deadline <= today)
+        Ok(today <= deadline)
     }
 }

@@ -67,7 +67,7 @@ impl Slot {
     pub fn start(&self) -> DateTime<Utc> {
         self.interval.start
     }
-    
+
     pub fn max_size(&self) -> usize {
         self.max_size
     }
