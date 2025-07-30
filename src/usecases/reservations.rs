@@ -36,7 +36,7 @@ impl ReservationsUseCase {
                     slot_start: slot.start(),
                     slot_end: slot.interval().end,
                     service: r.service().clone(),
-                    user_id: r.by().id(),
+                    username: r.by().username().as_str().to_string(),
                     user_name_lat: r.by().full_name_lat().as_str().to_string(),
                     user_name_cyr: r.by().full_name_cyr().as_str().to_string(),
                     citizenship: r.by().citizenship().clone(),

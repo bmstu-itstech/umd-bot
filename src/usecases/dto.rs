@@ -24,7 +24,7 @@ pub struct ReservationDTO {
     pub slot_start: DateTime<Utc>,
     pub slot_end: DateTime<Utc>,
     pub service: Service,
-    pub user_id: UserID,
+    pub username: String,
     pub user_name_lat: String,
     pub user_name_cyr: String,
     pub citizenship: Citizenship,
