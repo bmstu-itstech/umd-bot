@@ -37,7 +37,7 @@ services:
       - web-umd
     volumes:
       - ./migrations:/migrations
-    command: [ "-path", "/migrations", "-database", "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}sslmode=disable", "up" ]
+    command: [ "-path", "/migrations", "-database", "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable", "up" ]
     depends_on:
       db:
         condition: service_healthy
