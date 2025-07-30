@@ -1,4 +1,3 @@
-use std::io::Cursor;
 use chrono::NaiveDate;
 use csv::Writer;
 use serde::{Deserialize, Serialize};
@@ -94,7 +93,11 @@ async fn receive_date(
 }
 
 fn generate_csv(rs: &[ReservationDTO]) -> Result<Vec<u8>, Error> {
-    let mut writer = Writer::from_writer(Cursor::new(Vec::new()));
+    let mut buffer = Vec::new();
+    // UTF-8 BOM
+    buffer.extend_from_slice(&[0xEF, 0xBB, 0xBF]);
+
+    let mut writer = Writer::from_writer(buffer);
 
     writer.write_record(&[
         "#",
@@ -128,8 +131,7 @@ fn generate_csv(rs: &[ReservationDTO]) -> Result<Vec<u8>, Error> {
         .map_err(|err| Error::Other(err.into()))?;
     let res = writer
         .into_inner()
-        .map_err(|err| Error::Other(err.into()))?
-        .into_inner();
+        .map_err(|err| Error::Other(err.into()))?;
     Ok(res)
 }
 
@@ -138,11 +140,11 @@ pub fn admin_schema() -> UpdateHandler<Error> {
 
     let command_handler = teloxide::filter_command::<AdminCommand, _>()
         .branch(case![AdminCommand::Table].endpoint(handle_table_command));
-    
+
     let message_handler = Update::filter_message()
         .branch(command_handler)
         .branch(case![AdminState::AwaitingDate].endpoint(receive_date));
-    
+
     dialogue::enter::<Update, InMemStorage<AdminState>, AdminState, _>()
         .branch(message_handler)
 }
