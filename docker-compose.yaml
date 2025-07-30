@@ -37,10 +37,7 @@ services:
       - web-umd
     volumes:
       - ./migrations:/migrations
-    env_file: .env
-    environment:
-      DATABASE_URI: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
-    command: [ "-path", "/migrations", "-database", "$DATABASE_URI", "up" ]
+    command: [ "-path", "/migrations", "-database", "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}", "up" ]
     depends_on:
       db:
         condition: service_healthy
