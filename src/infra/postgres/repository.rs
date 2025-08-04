@@ -367,3 +367,42 @@ mod reserved_slots_tests {
         assert_eq!(slots.len(), 2);
     }
 }
+
+#[cfg(test)]
+mod users_repository_tests {
+    use chrono::NaiveDate;
+    use crate::domain::models::{Citizenship, OnlyCyrillic, OnlyLatin, Username};
+    use super::test_utils::*;
+    use super::*;
+    use crate::utils::postgres::testing::test_db_setup;
+    
+    #[tokio::test]
+    async fn test_save_several_users_with_username() {
+        let pool = test_db_setup().await;
+        setup_db(&pool).await.unwrap();
+        let repo = PostgresRepository { pool };
+        
+        let user1 = User::new(
+            UserID::new(1), 
+            Username::new(""), 
+            OnlyLatin::new("Ivanov").unwrap(), 
+            OnlyCyrillic::new("Иванов").unwrap(), 
+            Citizenship::Armenia,
+            NaiveDate::from_ymd_opt(2025, 7, 12).unwrap()
+        );
+
+        let user2 = User::new(
+            UserID::new(2),
+            Username::new(""),
+            OnlyLatin::new("Petrov").unwrap(),
+            OnlyCyrillic::new("Петров").unwrap(),
+            Citizenship::Armenia,
+            NaiveDate::from_ymd_opt(2025, 7, 12).unwrap()
+        );
+        
+        let res = repo.save_user(user1).await;
+        assert!(res.is_ok());
+        let res = repo.save_user(user2).await;
+        assert!(res.is_ok());
+    }
+}
