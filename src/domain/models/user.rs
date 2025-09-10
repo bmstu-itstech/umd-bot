@@ -5,9 +5,9 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct OnlyLatin(String);
+pub struct LatinText(String);
 
-impl OnlyLatin {
+impl LatinText {
     fn check(s: &str) -> Result<(), Error> {
         if s.chars()
             .into_iter()
@@ -45,9 +45,9 @@ impl CyrillicCheck for char {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct OnlyCyrillic(String);
+pub struct CyrillicText(String);
 
-impl OnlyCyrillic {
+impl CyrillicText {
     fn check(s: &str) -> Result<(), Error> {
         if s.chars()
             .into_iter()
@@ -106,8 +106,8 @@ impl Username {
 pub struct User {
     id: UserID,
     username: Username,
-    full_name_lat: OnlyLatin,
-    full_name_cyr: OnlyCyrillic,
+    full_name_lat: LatinText,
+    full_name_cyr: CyrillicText,
     citizenship: Citizenship,
     arrival_date: NaiveDate,
 }
@@ -116,8 +116,8 @@ impl User {
     pub fn new(
         id: UserID,
         username: Username,
-        full_name_lat: OnlyLatin,
-        full_name_cyr: OnlyCyrillic,
+        full_name_lat: LatinText,
+        full_name_cyr: CyrillicText,
         citizenship: Citizenship,
         arrival_date: NaiveDate,
     ) -> Self {
@@ -139,11 +139,11 @@ impl User {
         &self.username
     }
 
-    pub fn full_name_lat(&self) -> &OnlyLatin {
+    pub fn full_name_lat(&self) -> &LatinText {
         &self.full_name_lat
     }
 
-    pub fn full_name_cyr(&self) -> &OnlyCyrillic {
+    pub fn full_name_cyr(&self) -> &CyrillicText {
         &self.full_name_cyr
     }
 
@@ -155,11 +155,11 @@ impl User {
         &self.arrival_date
     }
 
-    pub fn set_full_name_lat(&mut self, full_name_lat: OnlyLatin) {
+    pub fn set_full_name_lat(&mut self, full_name_lat: LatinText) {
         self.full_name_lat = full_name_lat;
     }
 
-    pub fn set_full_name_cyr(&mut self, full_name_cyr: OnlyCyrillic) {
+    pub fn set_full_name_cyr(&mut self, full_name_cyr: CyrillicText) {
         self.full_name_cyr = full_name_cyr;
     }
 
@@ -181,17 +181,17 @@ mod tests {
 
         #[test]
         fn should_allow_valid_chars() {
-            assert!(OnlyLatin::new("Ivanov Ivan Ivanovich".to_string()).is_ok());
+            assert!(LatinText::new("Ivanov Ivan Ivanovich".to_string()).is_ok());
         }
 
         #[test]
         fn should_not_allow_cyrillic() {
-            assert!(OnlyLatin::new("Иван".to_string()).is_err());
+            assert!(LatinText::new("Иван".to_string()).is_err());
         }
 
         #[test]
         fn should_not_allow_special_chars() {
-            assert!(OnlyLatin::new("Ivan 2".to_string()).is_err());
+            assert!(LatinText::new("Ivan 2".to_string()).is_err());
         }
     }
 
@@ -200,17 +200,17 @@ mod tests {
 
         #[test]
         fn should_allow_valid_chars() {
-            assert!(OnlyCyrillic::new("Иванов Иван Иванович".to_string()).is_ok());
+            assert!(CyrillicText::new("Иванов Иван Иванович".to_string()).is_ok());
         }
 
         #[test]
         fn should_not_allow_not_cyrillic() {
-            assert!(OnlyCyrillic::new("Ivan".to_string()).is_err());
+            assert!(CyrillicText::new("Ivan".to_string()).is_err());
         }
 
         #[test]
         fn should_not_allow_special_chars() {
-            assert!(OnlyCyrillic::new("Иван 2".to_string()).is_err());
+            assert!(CyrillicText::new("Иван 2".to_string()).is_err());
         }
     }
 }

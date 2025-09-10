@@ -11,7 +11,7 @@ use crate::bot::handlers::keyboards::{
     self, make_citizenship_keyboard, make_field_selection_keyboard,
 };
 use crate::domain::Error;
-use crate::domain::models::{Citizenship, OnlyCyrillic, OnlyLatin, UserID};
+use crate::domain::models::{Citizenship, CyrillicText, LatinText, UserID};
 use crate::usecases::{CheckRegisteredUseCase, UpdateUserUseCase};
 
 #[derive(BotCommands, Clone)]
@@ -134,7 +134,7 @@ async fn receive_full_name_lat(
     use_case: UpdateUserUseCase,
 ) -> HandlerResult {
     match msg.text() {
-        Some(text) => match OnlyLatin::new(text) {
+        Some(text) => match LatinText::new(text) {
             Ok(name) => {
                 use_case.update_name_lat(msg.chat.id.0, name).await?;
                 bot.send_message(msg.chat.id, "✅ Имя на латинице изменено!")
@@ -166,7 +166,7 @@ async fn receive_full_name_cyr(
     use_case: UpdateUserUseCase,
 ) -> HandlerResult {
     match msg.text() {
-        Some(text) => match OnlyCyrillic::new(text) {
+        Some(text) => match CyrillicText::new(text) {
             Ok(name) => {
                 use_case.update_name_cyr(msg.chat.id.0, name).await?;
                 bot.send_message(msg.chat.id, "✅ Имя на кириллице изменено!")

@@ -1,2 +1,2 @@
 ALTER TABLE users
-    DROP CONSTRAINT users_username_key;
+    DROP CONSTRAINT IF EXISTS users_username_key;

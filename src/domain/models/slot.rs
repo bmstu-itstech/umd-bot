@@ -98,7 +98,7 @@ mod slot_tests {
 
     use chrono::{Duration, NaiveDate, TimeZone, Utc};
 
-    use crate::domain::models::{Citizenship, OnlyCyrillic, OnlyLatin, UserID, Username};
+    use crate::domain::models::{Citizenship, CyrillicText, LatinText, UserID, Username};
 
     fn interval_with_hours<Tz: TimeZone>(
         start_h: u32,
@@ -116,8 +116,8 @@ mod slot_tests {
         User::new(
             UserID::new(id),
             Username::new("username"),
-            OnlyLatin::new("Ivan").unwrap(),
-            OnlyCyrillic::new("Иван").unwrap(),
+            LatinText::new("Ivan").unwrap(),
+            CyrillicText::new("Иван").unwrap(),
             Citizenship::Armenia,
             NaiveDate::from_ymd_opt(2025, 7, 7).unwrap(),
         )

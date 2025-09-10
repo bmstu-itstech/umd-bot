@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use crate::domain::Error;
 use crate::domain::interfaces::{UserProvider, UserRepository};
-use crate::domain::models::{Citizenship, OnlyCyrillic, OnlyLatin, UserID};
+use crate::domain::models::{Citizenship, CyrillicText, LatinText, UserID};
 
 #[derive(Clone)]
 pub struct UpdateUserUseCase {
@@ -16,14 +16,14 @@ impl UpdateUserUseCase {
         Self { repos, provider }
     }
 
-    pub async fn update_name_lat(&self, id: i64, name: OnlyLatin) -> Result<(), Error> {
+    pub async fn update_name_lat(&self, id: i64, name: LatinText) -> Result<(), Error> {
         let mut user = self.provider.user(UserID::new(id)).await?;
         user.set_full_name_lat(name);
         self.repos.save_user(user).await?;
         Ok(())
     }
 
-    pub async fn update_name_cyr(&self, id: i64, name: OnlyCyrillic) -> Result<(), Error> {
+    pub async fn update_name_cyr(&self, id: i64, name: CyrillicText) -> Result<(), Error> {
         let mut user = self.provider.user(UserID::new(id)).await?;
         user.set_full_name_cyr(name);
         self.repos.save_user(user).await?;

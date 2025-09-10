@@ -3,7 +3,7 @@ use crate::bot::handlers::keyboards::{
     AGREEMENT_BTN, make_agreement_keyboard, make_citizenship_keyboard,
 };
 use crate::domain::Error;
-use crate::domain::models::{Citizenship, OnlyCyrillic, OnlyLatin, UserID, Username};
+use crate::domain::models::{Citizenship, CyrillicText, LatinText, UserID, Username};
 use crate::usecases::{CheckRegisteredUseCase, RegisterUserRequest, RegisterUserUseCase};
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
@@ -29,10 +29,10 @@ pub enum RegistrationState {
     Start,
     AwaitingPDAgreement,
     AwaitingFullNameLat,
-    AwaitingFullNameCyr(OnlyLatin),
-    AwaitingCitizenship(OnlyLatin, OnlyCyrillic),
-    AwaitingOtherCitizenship(OnlyLatin, OnlyCyrillic),
-    AwaitingArrivalDate(OnlyLatin, OnlyCyrillic, Citizenship),
+    AwaitingFullNameCyr(LatinText),
+    AwaitingCitizenship(LatinText, CyrillicText),
+    AwaitingOtherCitizenship(LatinText, CyrillicText),
+    AwaitingArrivalDate(LatinText, CyrillicText, Citizenship),
 }
 
 pub type RegistrationDialogue = Dialogue<RegistrationState, InMemStorage<RegistrationState>>;
@@ -117,7 +117,7 @@ async fn receive_full_name_lat(
     dialogue: RegistrationDialogue,
 ) -> HandlerResult {
     match msg.text() {
-        Some(text) => match OnlyLatin::new(text) {
+        Some(text) => match LatinText::new(text) {
             Ok(name) => {
                 bot.send_message(
                     msg.chat.id,
@@ -152,10 +152,10 @@ async fn receive_full_name_cyr(
     bot: Bot,
     msg: Message,
     dialogue: RegistrationDialogue,
-    full_name_lat: OnlyLatin,
+    full_name_lat: LatinText,
 ) -> HandlerResult {
     match msg.text() {
-        Some(text) => match OnlyCyrillic::new(text) {
+        Some(text) => match CyrillicText::new(text) {
             Ok(full_name_cyr) => {
                 let keyboard = make_citizenship_keyboard();
                 bot.send_message(msg.chat.id, "🌍 <b>Выберите гражданство</b>")
@@ -191,7 +191,7 @@ async fn receive_citizenship(
     bot: Bot,
     msg: Message,
     dialogue: RegistrationDialogue,
-    (full_name_lat, full_name_cyr): (OnlyLatin, OnlyCyrillic),
+    (full_name_lat, full_name_cyr): (LatinText, CyrillicText),
 ) -> HandlerResult {
     let text = match msg.text() {
         Some(t) => t,
@@ -260,7 +260,7 @@ async fn receive_other_citizenship(
     bot: Bot,
     msg: Message,
     dialogue: RegistrationDialogue,
-    (full_name_lat, full_name_cyr): (OnlyLatin, OnlyCyrillic),
+    (full_name_lat, full_name_cyr): (LatinText, CyrillicText),
 ) -> HandlerResult {
     let other = match msg.text() {
         Some(t) => t,
@@ -292,7 +292,7 @@ async fn receive_arrival_date(
     bot: Bot,
     msg: Message,
     dialogue: RegistrationDialogue,
-    (full_name_lat, full_name_cyr, citizenship): (OnlyLatin, OnlyCyrillic, Citizenship),
+    (full_name_lat, full_name_cyr, citizenship): (LatinText, CyrillicText, Citizenship),
     use_case: RegisterUserUseCase,
 ) -> HandlerResult {
     let date_str = match msg.text() {

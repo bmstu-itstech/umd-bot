@@ -1,5 +1,5 @@
 use crate::domain::models::{
-    Citizenship, OnlyCyrillic, OnlyLatin, Service, Slot, User, UserID, Username,
+    Citizenship, CyrillicText, LatinText, Service, Slot, User, UserID, Username,
 };
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
@@ -8,8 +8,8 @@ use serde::{Deserialize, Serialize};
 pub struct UserDTO {
     pub id: UserID,
     pub username: Username,
-    pub full_name_lat: OnlyLatin,
-    pub full_name_cyr: OnlyCyrillic,
+    pub full_name_lat: LatinText,
+    pub full_name_cyr: CyrillicText,
     pub citizenship: Citizenship,
     pub arrival_date: NaiveDate,
 }

@@ -371,7 +371,7 @@ mod reserved_slots_tests {
 #[cfg(test)]
 mod users_repository_tests {
     use chrono::NaiveDate;
-    use crate::domain::models::{Citizenship, OnlyCyrillic, OnlyLatin, Username};
+    use crate::domain::models::{Citizenship, CyrillicText, LatinText, Username};
     use super::test_utils::*;
     use super::*;
     use crate::utils::postgres::testing::test_db_setup;
@@ -383,10 +383,10 @@ mod users_repository_tests {
         let repo = PostgresRepository { pool };
         
         let user1 = User::new(
-            UserID::new(1), 
-            Username::new(""), 
-            OnlyLatin::new("Ivanov").unwrap(), 
-            OnlyCyrillic::new("Иванов").unwrap(), 
+            UserID::new(1),
+            Username::new(""),
+            LatinText::new("Ivanov").unwrap(),
+            CyrillicText::new("Иванов").unwrap(),
             Citizenship::Armenia,
             NaiveDate::from_ymd_opt(2025, 7, 12).unwrap()
         );
@@ -394,8 +394,8 @@ mod users_repository_tests {
         let user2 = User::new(
             UserID::new(2),
             Username::new(""),
-            OnlyLatin::new("Petrov").unwrap(),
-            OnlyCyrillic::new("Петров").unwrap(),
+            LatinText::new("Petrov").unwrap(),
+            CyrillicText::new("Петров").unwrap(),
             Citizenship::Armenia,
             NaiveDate::from_ymd_opt(2025, 7, 12).unwrap()
         );

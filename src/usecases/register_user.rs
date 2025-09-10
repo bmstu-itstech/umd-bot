@@ -3,13 +3,13 @@ use std::sync::Arc;
 
 use crate::domain::Error;
 use crate::domain::interfaces::UserRepository;
-use crate::domain::models::{Citizenship, OnlyCyrillic, OnlyLatin, User, UserID, Username};
+use crate::domain::models::{Citizenship, CyrillicText, LatinText, User, UserID, Username};
 
 pub struct RegisterUserRequest {
     pub id: UserID,
     pub username: Username,
-    pub full_name_lat: OnlyLatin,
-    pub full_name_cyr: OnlyCyrillic,
+    pub full_name_lat: LatinText,
+    pub full_name_cyr: CyrillicText,
     pub citizenship: Citizenship,
     pub arrival_date: NaiveDate,
 }

@@ -4,7 +4,7 @@ use tokio_postgres::{GenericClient, Row};
 
 use crate::domain::Error;
 use crate::domain::models::{
-    Citizenship, OnlyCyrillic, OnlyLatin, Service as DomainService, Slot, User, UserID, Username,
+    Citizenship, CyrillicText, LatinText, Service as DomainService, Slot, User, UserID, Username,
 };
 
 pub struct RawUser {
@@ -36,8 +36,8 @@ impl TryInto<User> for RawUser {
         Ok(User::new(
             UserID::new(self.id),
             Username::new(self.username),
-            OnlyLatin::new(self.full_name_lat)?,
-            OnlyCyrillic::new(self.full_name_cyr)?,
+            LatinText::new(self.full_name_lat)?,
+            CyrillicText::new(self.full_name_cyr)?,
             Citizenship::from(self.citizenship.as_str()),
             self.arrival_date,
         ))
