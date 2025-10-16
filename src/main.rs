@@ -6,10 +6,7 @@ use teloxide::Bot;
 
 use crate::dispatcher::UmdDispatcher;
 use crate::domain::models::{ClosedRange, UserID};
-use crate::domain::services::{
-    FixedSlotsFactory, FriForConsultationsServicePolicy, Mon2ThuAndFriWithLunchWorkingHoursPolicy,
-    StandardDeadlinePolicy,
-};
+use crate::domain::services::{FixedSlotsFactory, FriForConsultationsServicePolicy, Mon2ThuAndFriFixedSlotsFactory, Mon2ThuAndFriWithLunchWorkingHoursPolicy, StandardDeadlinePolicy};
 use crate::infra::{MockAdminProvider, PostgresRepository};
 use crate::usecases::{
     App, CancelReservationUseCase, CheckAdminUseCase, CheckDeadlineUseCase, CheckRegisteredUseCase,
@@ -43,7 +40,7 @@ async fn main() {
         .collect();
 
     let admin_provider = Arc::new(MockAdminProvider::new(admin_ids));
-    let slots_factory = Arc::new(FixedSlotsFactory::new(3, Duration::minutes(20)));
+    let slots_factory = Arc::new(Mon2ThuAndFriFixedSlotsFactory::new(3, 2, Duration::minutes(20)));
     let deadline_policy = Arc::new(StandardDeadlinePolicy::default());
     let working_hours_policy = Arc::new(Mon2ThuAndFriWithLunchWorkingHoursPolicy::new(
         ClosedRange {

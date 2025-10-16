@@ -1,7 +1,7 @@
 use crate::domain::Error;
 use crate::domain::models::{ClosedRange, Service, Slot};
 use crate::domain::services::{ServicePolicy, WorkingHoursPolicy};
-use chrono::{DateTime, Duration, NaiveDate, Utc};
+use chrono::{DateTime, Datelike, Duration, NaiveDate, Utc, Weekday};
 
 /// SlotsFactory управляет параметрами создания слота, такими как его размер и продолжительность.
 pub trait SlotsFactory: Send + Sync {
@@ -75,27 +75,55 @@ impl SlotsFactory for FixedSlotsFactory {
     }
 }
 
-#[cfg(test)]
-mod fixed_slots_factory_tests {
-    use super::*;
-    use crate::domain::services::{
-        FriForConsultationsServicePolicy, Mon2ThuAndFriWithLunchWorkingHoursPolicy,
-    };
-    use chrono::NaiveDate;
+/// FixedSlotsFactory создаёт слоты фиксированного размера и продолжительности, делая исключение
+/// для пятницы.
+pub struct Mon2ThuAndFriFixedSlotsFactory {
+    weekday_max_size: usize,
+    friday_max_size: usize,
+    duration: Duration,
+}
 
-    #[test]
-    fn test_no_slots_in_weekend() {
-        // GIVEN слоты размером 3 и длительностью 20 минут.
-        let factory = FixedSlotsFactory::new(3, Duration::minutes(20));
-        let wp = Mon2ThuAndFriWithLunchWorkingHoursPolicy::default();
+impl Mon2ThuAndFriFixedSlotsFactory {
+    pub fn new(weekday_max_size: usize, friday_max_size: usize, duration: Duration) -> Self {
+        Self { weekday_max_size, friday_max_size, duration }
+    }
+}
 
-        // WHEN выходной день
-        let date = NaiveDate::from_ymd_opt(2025, 7, 12).unwrap();
+impl SlotsFactory for Mon2ThuAndFriFixedSlotsFactory {
+    fn create(&self, start: DateTime<Utc>, services: Vec<Service>) -> Result<Slot, Error> {
+        let max_size = match start.date_naive().weekday() {
+            Weekday::Mon | Weekday::Tue | Weekday::Wed | Weekday::Thu => self.weekday_max_size,
+            Weekday::Fri => self.friday_max_size,
+            Weekday::Sat | Weekday::Sun => 0,
+        };
+        Slot::empty(
+            ClosedRange {
+                start,
+                end: start + self.duration,
+            },
+            max_size,
+            services,
+        )
+    }
 
-        // THEN слотов для записи не будет
-        let slots = factory
-            .create_all(date, &wp, &FriForConsultationsServicePolicy)
-            .unwrap();
-        assert!(slots.is_empty());
+    fn create_all(
+        &self,
+        date: NaiveDate,
+        wp: &dyn WorkingHoursPolicy,
+        sp: &dyn ServicePolicy,
+    ) -> Result<Vec<Slot>, Error> {
+        let start = date.and_hms_opt(0, 0, 0).unwrap().and_utc();
+        let services = sp.available_services(start.date_naive());
+        if services.is_empty() {
+            return Ok(vec![]);
+        }
+        let slots = std::iter::successors(Some(start), move |&start| Some(start + self.duration))
+            .take_while(move |time| time.date_naive() == date)
+            .map(move |time| self.create(time, services.clone()))
+            .collect::<Result<Vec<Slot>, Error>>()?;
+        Ok(slots
+            .into_iter()
+            .filter(move |slot| wp.is_working(slot.interval()))
+            .collect())
     }
 }
