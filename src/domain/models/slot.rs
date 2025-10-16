@@ -9,38 +9,64 @@ pub struct Slot {
     interval: ClosedRange<DateTime<Utc>>,
     reservations: Vec<Reservation>,
     max_size: usize,
+    services: Vec<Service>,
 }
 
 impl Slot {
-    pub fn empty(interval: ClosedRange<DateTime<Utc>>, size: usize) -> Self {
-        Self {
-            interval,
-            reservations: Vec::with_capacity(size),
-            max_size: size,
+    pub fn empty(
+        interval: ClosedRange<DateTime<Utc>>,
+        max_size: usize,
+        services: Vec<Service>,
+    ) -> Result<Self, Error> {
+        if services.is_empty() {
+            return Err(Error::InvalidValue(
+                "expected not empty services".to_string(),
+            ));
         }
+        Ok(Self {
+            interval,
+            reservations: Vec::with_capacity(max_size),
+            max_size,
+            services,
+        })
     }
 
+    #[cfg(test)]
     pub fn restore(
         interval: ClosedRange<DateTime<Utc>>,
         reservations: &[Reservation],
         max_size: usize,
+        services: Vec<Service>,
     ) -> Result<Self, Error> {
+        if services.is_empty() {
+            return Err(Error::InvalidValue(
+                "expected not empty services".to_string(),
+            ));
+        }
         if reservations.len() > max_size {
             return Err(Error::MaxCapacityExceeded(max_size));
         }
-
         Ok(Self {
             interval,
             reservations: Vec::from(reservations),
             max_size,
+            services,
         })
     }
 
     pub fn reserve(&mut self, user: User, service: Service) -> Result<(), Error> {
+        if !self.services.contains(&service) {
+            return Err(Error::CanNotReserveSlot(service));
+        }
         if self.reservations.len() >= self.max_size {
             return Err(Error::MaxCapacityExceeded(self.max_size));
         }
-        if self.reservations.iter().find(|r| r.by().id() == user.id()).is_some() {
+        if self
+            .reservations
+            .iter()
+            .find(|r| r.by().id() == user.id())
+            .is_some()
+        {
             return Err(Error::SlotAlreadyReserved(user.id()));
         }
         self.reservations.push(Reservation::new(user, service));
@@ -87,8 +113,13 @@ impl Slot {
         self.reservations.len() < self.max_size
     }
 
+    #[cfg(test)]
     pub fn reserved(&self) -> usize {
         self.reservations.len()
+    }
+
+    pub fn can_be_served_with(&self, service: Service) -> bool {
+        self.services.contains(&service)
     }
 }
 
@@ -128,7 +159,7 @@ mod slot_tests {
         // GIVEN пустой слот
         // GIVEN заданный интервал времени
         let interval = interval_with_hours(1, 2, Utc);
-        let slot = Slot::empty(interval.clone(), 1);
+        let slot = Slot::empty(interval.clone(), 1, Service::all().to_vec()).unwrap();
 
         // THEN слот должен быть доступным
         assert!(slot.is_available());
@@ -148,7 +179,8 @@ mod slot_tests {
         ];
 
         // WHEN слот на 3 места восстанавливается из исходных значений
-        let slot = Slot::restore(interval.clone(), &reservations, 3).unwrap();
+        let slot =
+            Slot::restore(interval.clone(), &reservations, 3, Service::all().to_vec()).unwrap();
 
         // THEN слот забронирован указанными ранее пользователями
         assert_eq!(slot.reservations(), reservations);
@@ -170,7 +202,7 @@ mod slot_tests {
         ];
 
         // WHEN попытка восстановить слот на 3 места из значений
-        let result = Slot::restore(interval, &reservations, 3);
+        let result = Slot::restore(interval, &reservations, 3, Service::all().to_vec());
 
         // THEN ошибка, что слот переполнен
         assert!(result.is_err());
@@ -183,7 +215,7 @@ mod slot_tests {
         // GIVEN пустой слот на 3 места
         // GIVEN один пользователь
         let interval = interval_with_hours(1, 2, Utc);
-        let mut slot = Slot::empty(interval, 3);
+        let mut slot = Slot::empty(interval, 3, Service::all().to_vec()).unwrap();
         let user = create_user(1);
 
         // WHEN пользователь бронирует слот
@@ -210,7 +242,7 @@ mod slot_tests {
             Reservation::new(create_user(2), Service::RenewalOfRegistration),
             Reservation::new(create_user(3), Service::Visa),
         ];
-        let mut slot = Slot::restore(interval, &reservations, 3).unwrap();
+        let mut slot = Slot::restore(interval, &reservations, 3, Service::all().to_vec()).unwrap();
         let user = create_user(4);
 
         // WHEN пользователь бронирует слот
@@ -222,7 +254,7 @@ mod slot_tests {
         // THEN слот всё ещё забронирован только 3 пользователями
         assert_eq!(slot.reserved(), 3);
     }
-    
+
     #[test]
     fn test_slot_reserving_twice() {
         // GIVEN заданный интервал времени
@@ -230,10 +262,8 @@ mod slot_tests {
         // GIVEN четвёртый пользователь
         let interval = interval_with_hours(1, 2, Utc);
         let user = create_user(1);
-        let reservations = vec![
-            Reservation::new(user.clone(), Service::All),
-        ];
-        let mut slot = Slot::restore(interval, &reservations, 2).unwrap();
+        let reservations = vec![Reservation::new(user.clone(), Service::All)];
+        let mut slot = Slot::restore(interval, &reservations, 2, Service::all().to_vec()).unwrap();
 
         // WHEN тот же пользователь бронирует слот
         let result = slot.reserve(user, Service::InitialRegistration);
@@ -244,4 +274,24 @@ mod slot_tests {
         // THEN слот всё ещё забронирован на одно место
         assert_eq!(slot.reserved(), 1);
     }
+
+    #[test]
+    fn test_slot_reserve_with_invalid_service() {
+        // GIVEN слот, доступный для записи только на консультацию
+        let interval = interval_with_hours(1, 2, Utc);
+        let mut slot = Slot::empty(interval, 1, vec![Service::Consultation]).unwrap();
+        let user = create_user(1);
+
+        // WHEN пользователь пытается забронировать слот для получения иной услуги
+        let result = slot.reserve(user, Service::InitialRegistration);
+
+        // THEN ошибка бронирования слота
+        assert!(matches!(
+            result,
+            Err(Error::CanNotReserveSlot(Service::InitialRegistration))
+        ));
+    }
+
+    #[test]
+    fn test_create_slot_without_available_services() {}
 }

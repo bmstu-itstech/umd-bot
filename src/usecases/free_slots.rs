@@ -3,32 +3,48 @@ use std::sync::Arc;
 
 use crate::domain::Error;
 use crate::domain::interfaces::AvailableSlotsProvider;
-use crate::domain::services::{SlotsFactory, WorkingHoursPolicy};
+use crate::domain::models::Service;
+use crate::domain::services::{ServicePolicy, SlotsFactory, WorkingHoursPolicy};
 use crate::usecases::FreeSlotDTO;
 
 #[derive(Clone)]
 pub struct FreeSlotsUseCase {
     factory: Arc<dyn SlotsFactory>,
     policy: Arc<dyn WorkingHoursPolicy>,
-    provider: Arc<dyn AvailableSlotsProvider>,
+    ap: Arc<dyn AvailableSlotsProvider>,
+    sp: Arc<dyn ServicePolicy>,
 }
 
 impl FreeSlotsUseCase {
     pub fn new(
         factory: Arc<dyn SlotsFactory>,
         policy: Arc<dyn WorkingHoursPolicy>,
-        provider: Arc<dyn AvailableSlotsProvider>,
+        ap: Arc<dyn AvailableSlotsProvider>,
+        sp: Arc<dyn ServicePolicy>,
     ) -> Self {
         Self {
             factory,
             policy,
-            provider,
+            ap,
+            sp,
         }
     }
 
-    pub async fn free_slots(&self, date: NaiveDate) -> Result<Vec<FreeSlotDTO>, Error> {
-        let slots = self.factory.create_all(date, self.policy.as_ref());
-        let slots = self.provider.available_slots(slots).await?;
-        Ok(slots.iter().map(|slot| slot.into()).collect())
+    pub async fn free_slots(
+        &self,
+        date: NaiveDate,
+        service: Service,
+    ) -> Result<Vec<FreeSlotDTO>, Error> {
+        let slots = self
+            .factory
+            .create_all(date, self.policy.as_ref(), self.sp.as_ref())?;
+        Ok(self
+            .ap
+            .available_slots(slots)
+            .await?
+            .into_iter()
+            .filter(|slot| slot.can_be_served_with(service))
+            .map(|slot| FreeSlotDTO::from(&slot))
+            .collect())
     }
 }

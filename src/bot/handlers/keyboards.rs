@@ -76,6 +76,7 @@ pub fn service_to_str(s: &Service) -> &'static str {
         Service::RenewalOfRegistration => "Продление регистрации",
         Service::RenewalOfVisa => "Продление визы",
         Service::All => "Все услуги",
+        Service::Consultation => "Консультация по РВПО/ВНЖ",
     }
 }
 
@@ -86,13 +87,14 @@ pub fn service_from_str(s: &str) -> Option<Service> {
         "Продление регистрации" => Some(Service::RenewalOfRegistration),
         "Продление визы" => Some(Service::RenewalOfVisa),
         "Все услуги" => Some(Service::All),
+        "Консультация по РВПО/ВНЖ" => Some(Service::Consultation),
         _ => None,
     }
 }
 
-pub fn make_service_keyboard() -> KeyboardMarkup {
+pub fn make_service_keyboard(services: &[Service]) -> KeyboardMarkup {
     KeyboardMarkup::new(
-        Service::all()
+        services
             .chunks(2)
             .map(|chunk| {
                 chunk

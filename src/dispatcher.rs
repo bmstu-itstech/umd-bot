@@ -1,15 +1,15 @@
-use teloxide::dispatching::dialogue::InMemStorage;
-use teloxide::dispatching::{DefaultKey, UpdateHandler};
-use teloxide::dptree::entry;
-use teloxide::prelude::Dispatcher;
-use teloxide::{Bot, dptree};
-use crate::bot::handlers::admin::{admin_schema, AdminState};
+use crate::bot::handlers::admin::{AdminState, admin_schema};
 use crate::bot::handlers::user::{
     RegistrationState, SlotsState, UpdateState, registration_schema, slots_schema, update_schema,
     view_schema,
 };
 use crate::domain::Error;
 use crate::usecases::App;
+use teloxide::dispatching::dialogue::InMemStorage;
+use teloxide::dispatching::{DefaultKey, UpdateHandler};
+use teloxide::dptree::entry;
+use teloxide::prelude::Dispatcher;
+use teloxide::{Bot, dptree};
 
 pub struct UmdDispatcher;
 

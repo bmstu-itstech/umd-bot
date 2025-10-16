@@ -58,15 +58,16 @@ async fn handle_start_command(
         return Ok(());
     }
 
-    bot.send_message(msg.chat.id,
-         "🌟 <b>Добро пожаловать</b>!\n\
+    bot.send_message(
+        msg.chat.id,
+        "🌟 <b>Добро пожаловать</b>!\n\
           Вас приветствует бот для записи на приём для получения услуг в кабинете 401аю ГУК.\n\
           Для продолжения работы необходимо дать согласие на обработку персональных данных, \
-          согласно с Федеральным законом РФ от 27.07.2006 №152-ФЗ «О персональных данных»"
+          согласно с Федеральным законом РФ от 27.07.2006 №152-ФЗ «О персональных данных»",
     )
-        .parse_mode(ParseMode::Html)
-        .reply_markup(make_agreement_keyboard())
-        .await?;
+    .parse_mode(ParseMode::Html)
+    .reply_markup(make_agreement_keyboard())
+    .await?;
     dialogue
         .update(RegistrationState::AwaitingPDAgreement)
         .await?;

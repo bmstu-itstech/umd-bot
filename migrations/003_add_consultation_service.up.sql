@@ -1,0 +1,2 @@
+ALTER TYPE SERVICE
+    ADD VALUE IF NOT EXISTS 'consultation';

@@ -1,5 +1,5 @@
-mod postgres;
 mod mock;
+mod postgres;
 
-pub use postgres::*;
 pub use mock::*;
+pub use postgres::*;

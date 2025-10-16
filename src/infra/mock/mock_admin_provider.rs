@@ -1,7 +1,7 @@
-use async_trait::async_trait;
 use crate::domain::Error;
 use crate::domain::interfaces::AdminProvider;
 use crate::domain::models::UserID;
+use async_trait::async_trait;
 
 pub struct MockAdminProvider {
     admin_ids: Vec<UserID>,

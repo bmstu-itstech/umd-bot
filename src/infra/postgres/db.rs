@@ -52,6 +52,7 @@ enum Service {
     RenewalOfRegistration,
     RenewalOfVisa,
     All,
+    Consultation,
 }
 
 impl Into<DomainService> for Service {
@@ -62,6 +63,7 @@ impl Into<DomainService> for Service {
             Service::RenewalOfRegistration => DomainService::RenewalOfRegistration,
             Service::RenewalOfVisa => DomainService::RenewalOfVisa,
             Service::All => DomainService::All,
+            Service::Consultation => DomainService::Consultation,
         }
     }
 }
@@ -74,6 +76,7 @@ impl From<DomainService> for Service {
             DomainService::RenewalOfRegistration => Service::RenewalOfRegistration,
             DomainService::RenewalOfVisa => Service::RenewalOfVisa,
             DomainService::All => Service::All,
+            DomainService::Consultation => Service::Consultation,
         }
     }
 }
@@ -249,47 +252,6 @@ pub async fn select_raw_reservations_with_user<C: GenericClient>(
                 users AS u
                 ON u.id = r.user_id
             "#,
-        working_slots_start.join(", ")
-    );
-
-    let rows = client
-        .query(&query, &[])
-        .await
-        .map_err(|err| Error::Other(err.into()))?;
-
-    fetch_raw_reservations_with_user(&rows)
-}
-
-pub async fn select_available_raw_reservations_with_user<C: GenericClient>(
-    client: &C,
-    starts: &[DateTime<Utc>],
-) -> Result<Vec<RawReservationWithUser>, Error> {
-    let working_slots_start: Vec<String> = starts
-        .iter()
-        .map(|dt| format!("(TIMESTAMPTZ '{}')", dt.to_string()))
-        .collect();
-
-    let query = format!(
-        r#"
-        WITH working_slots (start) AS (
-               SELECT *
-               FROM (VALUES {})
-               AS t(start)
-           )
-           SELECT
-               r.slot_start,
-               r.service,
-               u.*
-           FROM working_slots AS ws
-           LEFT JOIN
-               reservations AS r
-               ON ws.start = r.slot_start
-           INNER JOIN
-               users AS u
-               ON u.id = r.user_id
-           ORDER BY
-               r.slot_start ASC
-        "#,
         working_slots_start.join(", ")
     );
 

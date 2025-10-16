@@ -1,7 +1,7 @@
-use std::sync::Arc;
 use crate::domain::Error;
 use crate::domain::interfaces::AdminProvider;
 use crate::domain::models::UserID;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct CheckAdminUseCase {
@@ -9,12 +9,10 @@ pub struct CheckAdminUseCase {
 }
 
 impl CheckAdminUseCase {
-    pub fn new(
-        provider: Arc<dyn AdminProvider>,
-    ) -> Self {
+    pub fn new(provider: Arc<dyn AdminProvider>) -> Self {
         Self { provider }
     }
-    
+
     pub async fn is_admin(&self, id: UserID) -> Result<bool, Error> {
         self.provider.is_admin(id).await
     }

@@ -1,7 +1,8 @@
-use crate::utils::postgres::migrations::golang_migrate;
 use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod, Runtime};
 use std::path::{Path, PathBuf};
 use tokio_postgres::NoTls;
+
+use crate::utils::postgres::migrations::golang_migrate;
 
 fn migrations_uri() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations")

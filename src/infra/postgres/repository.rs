@@ -148,7 +148,7 @@ impl UserProvider for PostgresRepository {
 
 #[cfg(test)]
 mod test_utils {
-    use crate::domain::models::Slot;
+    use crate::domain::models::{Service, Slot};
     use crate::domain::services::SlotsFactory;
     use chrono::{NaiveDate, NaiveTime};
     use deadpool_postgres::Pool;
@@ -162,7 +162,7 @@ mod test_utils {
         let start = date
             .and_time(NaiveTime::from_hms_opt(start_h, start_m, 0).unwrap())
             .and_utc();
-        factory.create(start)
+        factory.create(start, Service::all().to_vec()).unwrap()
     }
 
     pub async fn setup_db(pool: &Pool) -> Result<(), tokio_postgres::Error> {
@@ -370,25 +370,25 @@ mod reserved_slots_tests {
 
 #[cfg(test)]
 mod users_repository_tests {
-    use chrono::NaiveDate;
-    use crate::domain::models::{Citizenship, CyrillicText, LatinText, Username};
     use super::test_utils::*;
     use super::*;
+    use crate::domain::models::{Citizenship, CyrillicText, LatinText, Username};
     use crate::utils::postgres::testing::test_db_setup;
-    
+    use chrono::NaiveDate;
+
     #[tokio::test]
     async fn test_save_several_users_with_username() {
         let pool = test_db_setup().await;
         setup_db(&pool).await.unwrap();
         let repo = PostgresRepository { pool };
-        
+
         let user1 = User::new(
             UserID::new(1),
             Username::new(""),
             LatinText::new("Ivanov").unwrap(),
             CyrillicText::new("Иванов").unwrap(),
             Citizenship::Armenia,
-            NaiveDate::from_ymd_opt(2025, 7, 12).unwrap()
+            NaiveDate::from_ymd_opt(2025, 7, 12).unwrap(),
         );
 
         let user2 = User::new(
@@ -397,9 +397,9 @@ mod users_repository_tests {
             LatinText::new("Petrov").unwrap(),
             CyrillicText::new("Петров").unwrap(),
             Citizenship::Armenia,
-            NaiveDate::from_ymd_opt(2025, 7, 12).unwrap()
+            NaiveDate::from_ymd_opt(2025, 7, 12).unwrap(),
         );
-        
+
         let res = repo.save_user(user1).await;
         assert!(res.is_ok());
         let res = repo.save_user(user2).await;

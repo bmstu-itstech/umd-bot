@@ -21,16 +21,6 @@ impl<T> ClosedRange<T>
 where
     T: Clone + PartialOrd + PartialEq,
 {
-    pub fn iter(&self) -> ClosedRangeIter<T>
-    where
-        T: PartialOrd + Clone,
-    {
-        ClosedRangeIter {
-            current: Some(self.start.clone()),
-            end: self.end.clone(),
-        }
-    }
-
     pub fn into_iter(self) -> ClosedRangeIter<T>
     where
         T: PartialOrd,

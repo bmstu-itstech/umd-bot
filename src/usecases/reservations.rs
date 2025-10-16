@@ -3,31 +3,36 @@ use std::sync::Arc;
 
 use crate::domain::Error;
 use crate::domain::interfaces::ReservedSlotsProvider;
-use crate::domain::services::{SlotsFactory, WorkingHoursPolicy};
+use crate::domain::services::{ServicePolicy, SlotsFactory, WorkingHoursPolicy};
 use crate::usecases::ReservationDTO;
 
 #[derive(Clone)]
 pub struct ReservationsUseCase {
     factory: Arc<dyn SlotsFactory>,
-    policy: Arc<dyn WorkingHoursPolicy>,
+    wp: Arc<dyn WorkingHoursPolicy>,
     provider: Arc<dyn ReservedSlotsProvider>,
+    sp: Arc<dyn ServicePolicy>,
 }
 
 impl ReservationsUseCase {
     pub fn new(
         factory: Arc<dyn SlotsFactory>,
-        policy: Arc<dyn WorkingHoursPolicy>,
+        wp: Arc<dyn WorkingHoursPolicy>,
         provider: Arc<dyn ReservedSlotsProvider>,
+        sp: Arc<dyn ServicePolicy>,
     ) -> Self {
         Self {
             factory,
-            policy,
+            wp,
             provider,
+            sp,
         }
     }
 
     pub async fn reservations(&self, date: NaiveDate) -> Result<Vec<ReservationDTO>, Error> {
-        let slots = self.factory.create_all(date, self.policy.as_ref());
+        let slots = self
+            .factory
+            .create_all(date, self.wp.as_ref(), self.sp.as_ref())?;
         let slots = self.provider.reserved_slots(slots).await?;
         let mut res = Vec::new();
         for slot in slots.into_iter() {

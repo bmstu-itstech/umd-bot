@@ -8,14 +8,13 @@ pub enum Service {
     RenewalOfRegistration,
     RenewalOfVisa,
     All,
+    Consultation,
 }
 
 impl Service {
     pub fn has_deadline(&self) -> bool {
         match self {
-            Self::InitialRegistration
-            | Self::Visa
-            | Self::All => true,
+            Self::InitialRegistration | Self::Visa | Self::All => true,
             _ => false,
         }
     }
@@ -27,6 +26,7 @@ impl Service {
             Service::RenewalOfRegistration,
             Service::RenewalOfVisa,
             Service::All,
+            Service::Consultation,
         ]
     }
 }
@@ -39,6 +39,7 @@ impl Into<String> for Service {
             Self::RenewalOfRegistration => "renewal_of_registration".into(),
             Self::RenewalOfVisa => "renewal_of_visa".into(),
             Self::All => "all".into(),
+            Self::Consultation => "consultation".into(),
         }
     }
 }
@@ -53,6 +54,7 @@ impl TryFrom<String> for Service {
             "renewal_of_registration" => Ok(Self::RenewalOfRegistration),
             "renewal_of_visa" => Ok(Self::RenewalOfVisa),
             "all" => Ok(Self::All),
+            "consultation" => Ok(Self::Consultation),
             _ => Err(Error::InvalidValue(format!(
                 "invalid Service: expected one of ['initial_registration', 'visa', 'insurance', \
                 'visa_and_insurance', 'renewal_of_registration', 'renewal_of_visa', 'all'], got {}",

@@ -49,9 +49,11 @@ async fn handle_reserve_command(
     bot: Bot,
     msg: Message,
     dialogue: SlotsDialogue,
-    use_case: CheckRegisteredUseCase,
+    check_registered: CheckRegisteredUseCase,
 ) -> HandlerResult {
-    let registered = use_case.is_registered(UserID::new(msg.chat.id.0)).await?;
+    let registered = check_registered
+        .is_registered(UserID::new(msg.chat.id.0))
+        .await?;
     if !registered {
         bot.send_message(
             msg.chat.id,
@@ -65,8 +67,9 @@ async fn handle_reserve_command(
     bot.send_message(
         msg.chat.id,
         "🔹 <b>Выберите тип услуги</b>\n\
-        Обратите внимание, что в зависимости от типа отличается срок оказания услуги.\n\
-        Так \"Первичная регистрация\", \"Виза\" и \"Все услуги\" имеют следующие сроки начиная от \
+        Обратите внимание, что в зависимости от типа отличаются дни и срок оказания услуги.\n\
+        В пятницу доступна только услуга \"Консультация по РВПО/ВНЖ\".\n\
+        \"Первичная регистрация\", \"Виза\" и \"Все услуги\" имеют следующие сроки начиная от \
         времени прибытия:\n\
         - Таджикистан, Узбекистан - 15 дней;\n\
         - Казахстан, Кыргызстан, Армения - 30 дней;\n\
@@ -74,7 +77,7 @@ async fn handle_reserve_command(
         - Другие страны - 7 дней.",
     )
     .parse_mode(ParseMode::Html)
-    .reply_markup(make_service_keyboard())
+    .reply_markup(make_service_keyboard(Service::all()))
     .await?;
     dialogue.update(SlotsState::AwaitingServiceType).await?;
     Ok(())
@@ -121,13 +124,13 @@ async fn receive_service_type(
                     Используйте клавиатуру для ввода.",
                 )
                 .parse_mode(ParseMode::Html)
-                .reply_markup(make_service_keyboard())
+                .reply_markup(make_service_keyboard(Service::all()))
                 .await?;
             }
         },
         None => {
             bot.send_message(msg.chat.id, "📝 Введите текстовое сообщение")
-                .reply_markup(make_service_keyboard())
+                .reply_markup(make_service_keyboard(Service::all()))
                 .await?;
         }
     }
@@ -169,7 +172,7 @@ async fn receive_day(
     match msg.text() {
         Some(BACK_BTN) => {
             bot.send_message(msg.chat.id, "Выберите тип услуги")
-                .reply_markup(make_service_keyboard())
+                .reply_markup(make_service_keyboard(Service::all()))
                 .await?;
             dialogue.update(SlotsState::AwaitingServiceType).await?;
         }
@@ -177,7 +180,7 @@ async fn receive_day(
             Some((month, day)) => {
                 match days.iter().find(|&d| d.month() == month && d.day() == day) {
                     Some(date) => {
-                        let slots = use_case.free_slots(*date).await?;
+                        let slots = use_case.free_slots(*date, service).await?;
                         let slots = make_slots_map(slots);
                         bot.send_message(msg.chat.id, "⏰ <b>Выберите доступный слот</b>")
                             .parse_mode(ParseMode::Html)
@@ -334,8 +337,8 @@ async fn receive_approval(
                         "❌ <b>Ошибка бронирования</b>\n\
                         Слот уже забронирован Вами. Попробуйте снова: /reserve",
                     )
-                        .parse_mode(ParseMode::Html)
-                        .await?;
+                    .parse_mode(ParseMode::Html)
+                    .await?;
                     dialogue.exit().await?;
                 }
                 Err(e) => return Err(e.into()),

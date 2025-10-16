@@ -1,4 +1,4 @@
-use crate::domain::models::UserID;
+use crate::domain::models::{Service, UserID};
 
 pub type StdError = Box<dyn std::error::Error + Send + Sync>;
 
@@ -18,9 +18,12 @@ pub enum Error {
 
     #[error("slot not found")]
     SlotNotFoundError,
-    
+
     #[error("slot already reserved by user")]
     SlotAlreadyReserved(UserID),
+
+    #[error("can not reserve slot for service {0:?}")]
+    CanNotReserveSlot(Service),
 
     #[error(transparent)]
     Other(#[from] StdError),

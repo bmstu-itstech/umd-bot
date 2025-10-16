@@ -5,7 +5,7 @@ use std::sync::Arc;
 use crate::domain::Error;
 use crate::domain::interfaces::{HasAvailableSlotsProvider, UserProvider};
 use crate::domain::models::{ClosedRange, Service, UserID};
-use crate::domain::services::{DeadlinePolicy, SlotsFactory, WorkingHoursPolicy};
+use crate::domain::services::{DeadlinePolicy, ServicePolicy, SlotsFactory, WorkingHoursPolicy};
 
 const MAX_DAYS_BEFORE_RESERVE: Days = Days::new(14);
 
@@ -16,6 +16,7 @@ pub struct DaysWithFreeSlotsUseCase {
     working_hours_policy: Arc<dyn WorkingHoursPolicy>,
     user_provider: Arc<dyn UserProvider>,
     provider: Arc<dyn HasAvailableSlotsProvider>,
+    service_policy: Arc<dyn ServicePolicy>,
 }
 
 impl DaysWithFreeSlotsUseCase {
@@ -25,6 +26,7 @@ impl DaysWithFreeSlotsUseCase {
         working_hours_policy: Arc<dyn WorkingHoursPolicy>,
         user_provider: Arc<dyn UserProvider>,
         provider: Arc<dyn HasAvailableSlotsProvider>,
+        service_policy: Arc<dyn ServicePolicy>,
     ) -> Self {
         Self {
             factory,
@@ -32,6 +34,7 @@ impl DaysWithFreeSlotsUseCase {
             working_hours_policy,
             user_provider,
             provider,
+            service_policy,
         }
     }
 
@@ -54,7 +57,14 @@ impl DaysWithFreeSlotsUseCase {
         for date in range.into_iter() {
             let slots = self
                 .factory
-                .create_all(date, self.working_hours_policy.as_ref());
+                .create_all(
+                    date,
+                    self.working_hours_policy.as_ref(),
+                    self.service_policy.as_ref(),
+                )?
+                .into_iter()
+                .filter(|slot| slot.can_be_served_with(service))
+                .collect::<Vec<_>>();
 
             if !slots.is_empty() && self.provider.has_available_slots(&slots).await? {
                 result.push(date);

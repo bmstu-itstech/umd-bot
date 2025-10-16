@@ -7,10 +7,15 @@ use teloxide::Bot;
 use crate::dispatcher::UmdDispatcher;
 use crate::domain::models::{ClosedRange, UserID};
 use crate::domain::services::{
-    FixedSlotsFactory, Mon2ThuAndFriWithLunchWorkingHoursPolicy, StandardDeadlinePolicy,
+    FixedSlotsFactory, FriForConsultationsServicePolicy, Mon2ThuAndFriWithLunchWorkingHoursPolicy,
+    StandardDeadlinePolicy,
 };
 use crate::infra::{MockAdminProvider, PostgresRepository};
-use crate::usecases::{App, CancelReservationUseCase, CheckDeadlineUseCase, CheckRegisteredUseCase, DaysWithFreeSlotsUseCase, FreeSlotsUseCase, GetUserUseCase, RegisterUserUseCase, ReserveSlotUseCase, ReservationsUseCase, UpdateUserUseCase, CheckAdminUseCase};
+use crate::usecases::{
+    App, CancelReservationUseCase, CheckAdminUseCase, CheckDeadlineUseCase, CheckRegisteredUseCase,
+    DaysWithFreeSlotsUseCase, FreeSlotsUseCase, GetUserUseCase, RegisterUserUseCase,
+    ReservationsUseCase, ReserveSlotUseCase, UpdateUserUseCase,
+};
 use crate::utils::postgres::pool;
 
 mod bot;
@@ -36,7 +41,7 @@ async fn main() {
         .into_iter()
         .map(|s| UserID::new(s.parse::<i64>().expect("unable to parse user ids")))
         .collect();
-        
+
     let admin_provider = Arc::new(MockAdminProvider::new(admin_ids));
     let slots_factory = Arc::new(FixedSlotsFactory::new(3, Duration::minutes(20)));
     let deadline_policy = Arc::new(StandardDeadlinePolicy::default());
@@ -54,6 +59,7 @@ async fn main() {
             end: NaiveTime::from_hms_opt(13, 30, 0).unwrap(),
         },
     ));
+    let service_policy = Arc::new(FriForConsultationsServicePolicy);
     let repos = Arc::new(PostgresRepository::new(pool));
 
     let app = App {
@@ -61,6 +67,7 @@ async fn main() {
             slots_factory.clone(),
             repos.clone(),
             repos.clone(),
+            service_policy.clone(),
         ),
         check_admin: CheckAdminUseCase::new(admin_provider.clone()),
         check_deadline: CheckDeadlineUseCase::new(deadline_policy.clone(), repos.clone()),
@@ -71,25 +78,29 @@ async fn main() {
             working_hours_policy.clone(),
             repos.clone(),
             repos.clone(),
+            service_policy.clone(),
         ),
         free_slots: FreeSlotsUseCase::new(
             slots_factory.clone(),
             working_hours_policy.clone(),
             repos.clone(),
+            service_policy.clone(),
         ),
         get_user: GetUserUseCase::new(repos.clone()),
         register_user: RegisterUserUseCase::new(repos.clone()),
         reserve_slot: ReserveSlotUseCase::new(
             slots_factory.clone(),
+            repos.clone(),
+            repos.clone(),
+            repos.clone(),
             working_hours_policy.clone(),
-            repos.clone(),
-            repos.clone(),
-            repos.clone(),
+            service_policy.clone(),
         ),
         slots: ReservationsUseCase::new(
             slots_factory.clone(),
             working_hours_policy.clone(),
             repos.clone(),
+            service_policy.clone(),
         ),
         update_user: UpdateUserUseCase::new(repos.clone(), repos.clone()),
     };

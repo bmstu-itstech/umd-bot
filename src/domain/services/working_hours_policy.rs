@@ -9,9 +9,11 @@ pub trait WorkingHoursPolicy: Send + Sync {
 
 /// Mon2FriWorkingHoursPolicy описывает рабочую неделю с
 /// понедельника по пятницу без учёта времени работы.
+#[cfg(test)]
 #[derive(Default)]
 pub struct Mon2FriWorkingHoursPolicy;
 
+#[cfg(test)]
 impl WorkingHoursPolicy for Mon2FriWorkingHoursPolicy {
     fn is_working(&self, interval: &ClosedRange<DateTime<Utc>>) -> bool {
         let date = interval.start.date_naive();

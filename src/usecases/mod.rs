@@ -1,5 +1,6 @@
 mod app;
 mod cancel_reservation;
+mod check_admin;
 mod check_deadline;
 mod check_registered;
 mod days_with_free_slots;
@@ -7,10 +8,9 @@ mod dto;
 mod free_slots;
 mod get_user;
 mod register_user;
-mod reserve_slot;
 mod reservations;
+mod reserve_slot;
 mod update_user;
-mod check_admin;
 
 pub use app::*;
 pub use cancel_reservation::*;
@@ -22,6 +22,6 @@ pub use dto::*;
 pub use free_slots::*;
 pub use get_user::*;
 pub use register_user::*;
-pub use reserve_slot::*;
 pub use reservations::*;
+pub use reserve_slot::*;
 pub use update_user::*;

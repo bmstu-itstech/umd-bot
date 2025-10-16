@@ -1,13 +1,9 @@
-use crate::domain::models::{
-    Citizenship, CyrillicText, LatinText, Service, Slot, User, UserID, Username,
-};
+use crate::domain::models::{Citizenship, CyrillicText, LatinText, Service, Slot, User};
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug)]
 pub struct UserDTO {
-    pub id: UserID,
-    pub username: Username,
     pub full_name_lat: LatinText,
     pub full_name_cyr: CyrillicText,
     pub citizenship: Citizenship,
@@ -43,8 +39,6 @@ impl From<&Slot> for FreeSlotDTO {
 impl From<&User> for UserDTO {
     fn from(user: &User) -> Self {
         Self {
-            id: user.id(),
-            username: user.username().clone(),
             full_name_lat: user.full_name_lat().clone(),
             full_name_cyr: user.full_name_cyr().clone(),
             citizenship: user.citizenship().clone(),
