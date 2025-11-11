@@ -1,3 +1,4 @@
+use crate::Duration;
 use chrono::{Days, NaiveDate, Utc};
 use std::ops::Add;
 use std::sync::Arc;
@@ -44,7 +45,7 @@ impl DaysWithFreeSlotsUseCase {
         service: Service,
     ) -> Result<Vec<NaiveDate>, Error> {
         let user = self.user_provider.user(user_id).await?;
-        let start = Utc::now().naive_utc().date();
+        let start = Utc::now().naive_utc().date().add(Duration::days(1));
         let end = if service.has_deadline() {
             start.add(self.deadline_policy.deadline(user.citizenship()))
         } else {

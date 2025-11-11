@@ -4,7 +4,7 @@ services:
     build: .
     env_file: .env
     environment:
-      DATABASE_URI: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+      DATABASE_URI: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable"
     depends_on:
       - db
     networks:
@@ -15,7 +15,7 @@ services:
     container_name: umd-db
     command: postgres
     ports:
-      - "${POSTGRES_PORT_EXT:-5432}:5432"
+      - "${EXTERNAL_POSTGRES_PORT:-5432}:5432"
     env_file: .env
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB" ]
@@ -37,7 +37,7 @@ services:
       - web-umd
     volumes:
       - ./migrations:/migrations
-    command: [ "-path", "/migrations", "-database", "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable", "up" ]
+    command: [ "-path", "/migrations", "-database", "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@$db:5432/${POSTGRES_DB}?sslmode=disable", "up" ]
     depends_on:
       db:
         condition: service_healthy
