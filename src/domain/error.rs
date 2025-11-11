@@ -17,7 +17,7 @@ pub enum Error {
     UserNotReserved(UserID),
 
     #[error("slot not found")]
-    SlotNotFoundError,
+    SlotNotFound,
 
     #[error("slot already reserved by user")]
     SlotAlreadyReserved(UserID),

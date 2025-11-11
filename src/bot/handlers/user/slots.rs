@@ -142,11 +142,7 @@ fn fetch_month_and_date(s: &str) -> Option<(u32, u32)> {
         .splitn(2, '.')
         .map(|s| s.parse::<u32>().ok())
         .collect::<Option<Vec<_>>>();
-    if let Some(v) = v {
-        Some((v[0], v[1]))
-    } else {
-        None
-    }
+    v.map(|v| (v[0], v[1]))
 }
 
 fn make_slots_map(slots: Vec<FreeSlotDTO>) -> HashMap<String, FreeSlotDTO> {
@@ -321,7 +317,7 @@ async fn receive_approval(
                     .await?;
                     dialogue.exit().await?;
                 }
-                Err(Error::SlotNotFoundError) => {
+                Err(Error::SlotNotFound) => {
                     bot.send_message(
                         msg.chat.id,
                         "😕 <b>Этот слот уже занят</b>\n\
@@ -341,7 +337,7 @@ async fn receive_approval(
                     .await?;
                     dialogue.exit().await?;
                 }
-                Err(e) => return Err(e.into()),
+                Err(e) => return Err(e),
             }
         }
         Some(_) => {
@@ -369,6 +365,7 @@ async fn handle_cancel_callback(
     use_case: CancelReservationUseCase,
 ) -> HandlerResult {
     let user_id = UserID::new(q.from.id.0 as i64);
+    #[allow(clippy::collapsible_if)] // Нельзя, так как && в этом месте есть unstable option
     if let Some(data) = q.data {
         if let Ok(date) = DateTime::from_str(&data) {
             use_case.cancel_reservation(user_id, date).await?;

@@ -42,7 +42,7 @@ impl From<&User> for UserDTO {
             full_name_lat: user.full_name_lat().clone(),
             full_name_cyr: user.full_name_cyr().clone(),
             citizenship: user.citizenship().clone(),
-            arrival_date: user.arrival_date().clone(),
+            arrival_date: *user.arrival_date(),
         }
     }
 }

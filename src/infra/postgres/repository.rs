@@ -118,7 +118,7 @@ impl SlotsRepository for PostgresRepository {
     async fn save_slot(&self, slot: &Slot) -> Result<(), Error> {
         with_transaction!(self.pool, async |tx: &Transaction| {
             delete_reservations(tx, slot.start()).await?;
-            let raw_reservations = slot_to_raw_reservations(&slot);
+            let raw_reservations = slot_to_raw_reservations(slot);
             batch_insert_raw_reservations(tx, &raw_reservations).await?;
             Ok::<_, Error>(())
         })

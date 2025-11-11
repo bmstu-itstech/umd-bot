@@ -95,7 +95,7 @@ fn generate_csv(rs: &[ReservationDTO]) -> Result<Vec<u8>, Error> {
     let mut writer = Writer::from_writer(buffer);
 
     writer
-        .write_record(&[
+        .write_record([
             "#",
             "Начало",
             "Конец",
@@ -108,7 +108,7 @@ fn generate_csv(rs: &[ReservationDTO]) -> Result<Vec<u8>, Error> {
         ])
         .map_err(|err| Error::Other(err.into()))?;
 
-    for (i, r) in rs.into_iter().enumerate() {
+    for (i, r) in rs.iter().enumerate() {
         writer
             .write_record(&[
                 format!("{}", i + 1),

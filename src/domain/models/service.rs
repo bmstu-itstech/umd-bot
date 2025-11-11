@@ -13,10 +13,7 @@ pub enum Service {
 
 impl Service {
     pub fn has_deadline(&self) -> bool {
-        match self {
-            Self::InitialRegistration | Self::Visa | Self::All => true,
-            _ => false,
-        }
+        matches!(self, Self::InitialRegistration | Self::Visa | Self::All)
     }
 
     pub fn all() -> &'static [Service] {
@@ -31,15 +28,15 @@ impl Service {
     }
 }
 
-impl Into<String> for Service {
-    fn into(self) -> String {
-        match self {
-            Self::InitialRegistration => "initial_registration".into(),
-            Self::Visa => "visa".into(),
-            Self::RenewalOfRegistration => "renewal_of_registration".into(),
-            Self::RenewalOfVisa => "renewal_of_visa".into(),
-            Self::All => "all".into(),
-            Self::Consultation => "consultation".into(),
+impl From<Service> for String {
+    fn from(val: Service) -> String {
+        match val {
+            Service::InitialRegistration => "initial_registration".into(),
+            Service::Visa => "visa".into(),
+            Service::RenewalOfRegistration => "renewal_of_registration".into(),
+            Service::RenewalOfVisa => "renewal_of_visa".into(),
+            Service::All => "all".into(),
+            Service::Consultation => "consultation".into(),
         }
     }
 }

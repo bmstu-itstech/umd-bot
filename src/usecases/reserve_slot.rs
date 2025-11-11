@@ -52,7 +52,7 @@ impl ReserveSlotUseCase {
 
         let slot = match res {
             Some(slot) => slot,
-            None => return Err(Error::SlotNotFoundError),
+            None => return Err(Error::SlotNotFound),
         };
 
         slot.reserve(user, service)?;

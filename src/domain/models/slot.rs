@@ -61,12 +61,7 @@ impl Slot {
         if self.reservations.len() >= self.max_size {
             return Err(Error::MaxCapacityExceeded(self.max_size));
         }
-        if self
-            .reservations
-            .iter()
-            .find(|r| r.by().id() == user.id())
-            .is_some()
-        {
+        if self.reservations.iter().any(|r| r.by().id() == user.id()) {
             return Err(Error::SlotAlreadyReserved(user.id()));
         }
         self.reservations.push(Reservation::new(user, service));

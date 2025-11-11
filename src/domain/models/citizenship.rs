@@ -42,8 +42,8 @@ impl From<&str> for Citizenship {
     }
 }
 
-impl Into<String> for Citizenship {
-    fn into(self) -> String {
-        self.as_str().into()
+impl From<Citizenship> for String {
+    fn from(val: Citizenship) -> String {
+        val.as_str().into()
     }
 }

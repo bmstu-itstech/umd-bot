@@ -24,7 +24,7 @@ impl From<&User> for RawUser {
             full_name_lat: u.full_name_lat().as_str().to_string(),
             full_name_cyr: u.full_name_cyr().as_str().to_string(),
             citizenship: u.citizenship().as_str().to_string(),
-            arrival_date: u.arrival_date().clone(),
+            arrival_date: *u.arrival_date(),
         }
     }
 }
@@ -55,9 +55,9 @@ enum Service {
     Consultation,
 }
 
-impl Into<DomainService> for Service {
-    fn into(self) -> DomainService {
-        match self {
+impl From<Service> for DomainService {
+    fn from(val: Service) -> Self {
+        match val {
             Service::InitialRegistration => DomainService::InitialRegistration,
             Service::Visa => DomainService::Visa,
             Service::RenewalOfRegistration => DomainService::RenewalOfRegistration,
@@ -230,7 +230,7 @@ pub async fn select_raw_reservations_with_user<C: GenericClient>(
 ) -> Result<Vec<RawReservationWithUser>, Error> {
     let working_slots_start: Vec<String> = starts
         .iter()
-        .map(|dt| format!("(TIMESTAMPTZ '{}')", dt.to_string()))
+        .map(|dt| format!("(TIMESTAMPTZ '{}')", dt))
         .collect();
 
     let query = format!(
@@ -270,7 +270,7 @@ pub async fn has_available_slots<C: GenericClient>(
 ) -> Result<bool, Error> {
     let working_slots_start: Vec<String> = starts
         .iter()
-        .map(|dt| format!("(TIMESTAMPTZ '{}')", dt.to_string()))
+        .map(|dt| format!("(TIMESTAMPTZ '{}')", dt))
         .collect();
 
     let query = format!(
@@ -334,7 +334,7 @@ pub fn fetch_raw_reservations_with_user(
     rows: &[Row],
 ) -> Result<Vec<RawReservationWithUser>, Error> {
     rows.iter()
-        .map(|row| fetch_raw_reservation_with_user(row))
+        .map(fetch_raw_reservation_with_user)
         .collect::<Result<Vec<RawReservationWithUser>, _>>()
         .map_err(|err| Error::Other(err.into()))
 }
@@ -344,7 +344,7 @@ pub fn slot_to_raw_reservations(slot: &Slot) -> Vec<RawReservation> {
         .iter()
         .map(|r| RawReservation {
             slot_start: slot.start(),
-            service: r.service().clone().into(),
+            service: (*r.service()).into(),
             user_id: r.by().id().as_i64(),
         })
         .collect()

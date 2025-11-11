@@ -9,7 +9,7 @@ pub trait WorkingHoursPolicy: Send + Sync {
 
 /// Mon2FriWorkingHoursPolicy описывает рабочую неделю с
 /// понедельника по пятницу без учёта времени работы.
-#[cfg(test)]
+#[allow(dead_code)]
 #[derive(Default)]
 pub struct Mon2FriWorkingHoursPolicy;
 

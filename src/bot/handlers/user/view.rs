@@ -54,7 +54,5 @@ pub fn view_schema() -> UpdateHandler<Error> {
     let command_handler = teloxide::filter_command::<ViewCommand, _>()
         .branch(case![ViewCommand::View].endpoint(handle_view_command));
 
-    let message_handler = Update::filter_message().branch(command_handler);
-
-    message_handler
+    Update::filter_message().branch(command_handler)
 }

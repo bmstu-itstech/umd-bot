@@ -4,7 +4,7 @@ use chrono::{DateTime, NaiveDate, Utc};
 use std::collections::HashMap;
 use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, KeyboardMarkup};
 
-pub const AGREEMENT_BTN: &'static str = "Подтверждаю";
+pub const AGREEMENT_BTN: &str = "Подтверждаю";
 
 pub fn make_agreement_keyboard() -> KeyboardMarkup {
     let buttons = vec![vec![KeyboardButton::new(AGREEMENT_BTN)]];
@@ -13,8 +13,8 @@ pub fn make_agreement_keyboard() -> KeyboardMarkup {
         .one_time_keyboard()
 }
 
-pub const YES_BTN: &'static str = "Да";
-pub const BACK_BTN: &'static str = "Назад";
+pub const YES_BTN: &str = "Да";
+pub const BACK_BTN: &str = "Назад";
 
 pub fn make_yes_back_keyboard() -> KeyboardMarkup {
     KeyboardMarkup::new(vec![vec![
@@ -26,7 +26,7 @@ pub fn make_yes_back_keyboard() -> KeyboardMarkup {
 }
 
 pub fn make_citizenship_keyboard() -> KeyboardMarkup {
-    let countries = vec![
+    let countries = [
         "Таджикистан",
         "Узбекистан",
         "Казахстан",
@@ -47,10 +47,10 @@ pub fn make_citizenship_keyboard() -> KeyboardMarkup {
         .one_time_keyboard()
 }
 
-pub const FIELD_NAME_LAT_BTN: &'static str = "Имя на латинице";
-pub const FIELD_NAME_CYR_BTN: &'static str = "Имя на кириллицe";
-pub const FIELD_CITIZENSHIP_BTN: &'static str = "Гражданство";
-pub const FIELD_ARRIVAL_DATE_BTN: &'static str = "Дата прибытия";
+pub const FIELD_NAME_LAT_BTN: &str = "Имя на латинице";
+pub const FIELD_NAME_CYR_BTN: &str = "Имя на кириллицe";
+pub const FIELD_CITIZENSHIP_BTN: &str = "Гражданство";
+pub const FIELD_ARRIVAL_DATE_BTN: &str = "Дата прибытия";
 
 pub fn make_field_selection_keyboard() -> KeyboardMarkup {
     let buttons = vec![
@@ -98,7 +98,7 @@ pub fn make_service_keyboard(services: &[Service]) -> KeyboardMarkup {
             .chunks(2)
             .map(|chunk| {
                 chunk
-                    .into_iter()
+                    .iter()
                     .map(|s| KeyboardButton::new(service_to_str(s)))
                     .collect::<Vec<KeyboardButton>>()
             })
@@ -113,7 +113,7 @@ pub fn make_days_keyboard_with_back(days: &[NaiveDate]) -> KeyboardMarkup {
         .chunks(4)
         .map(|chunk| {
             chunk
-                .into_iter()
+                .iter()
                 .map(|day| KeyboardButton::new(day.format("%m.%d").to_string()))
                 .collect::<Vec<KeyboardButton>>()
         })
@@ -132,7 +132,7 @@ pub fn make_slots_keyboard_with_back(slots: &HashMap<String, FreeSlotDTO>) -> Ke
         .chunks(3)
         .map(|chunk| {
             chunk
-                .into_iter()
+                .iter()
                 .map(|s| KeyboardButton::new(*s))
                 .collect::<Vec<KeyboardButton>>()
         })

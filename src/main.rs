@@ -6,7 +6,10 @@ use teloxide::Bot;
 
 use crate::dispatcher::UmdDispatcher;
 use crate::domain::models::{ClosedRange, UserID};
-use crate::domain::services::{FixedSlotsFactory, FriForConsultationsServicePolicy, Mon2ThuAndFriFixedSlotsFactory, Mon2ThuAndFriWithLunchWorkingHoursPolicy, StandardDeadlinePolicy};
+use crate::domain::services::{
+    FriForConsultationsServicePolicy, Mon2ThuAndFriFixedSlotsFactory,
+    Mon2ThuAndFriWithLunchWorkingHoursPolicy, StandardDeadlinePolicy,
+};
 use crate::infra::{MockAdminProvider, PostgresRepository};
 use crate::usecases::{
     App, CancelReservationUseCase, CheckAdminUseCase, CheckDeadlineUseCase, CheckRegisteredUseCase,
@@ -29,19 +32,22 @@ async fn main() {
 
     let uri = env::var("DATABASE_URI").expect("DATABASE_URI must be set");
     let pool =
-        pool::connect(&uri).expect(format!("unable to connect to database: {}", uri).as_str());
+        pool::connect(&uri).unwrap_or_else(|_| panic!("unable to connect to database {}", uri));
     log::info!("Connected to PostgreSQL database: {}", uri);
 
     let admin_ids_str = env::var("ADMIN_IDS").unwrap_or_default();
     let admin_ids: Vec<UserID> = admin_ids_str
         .split(",")
-        .into_iter()
         .map(|s| UserID::new(s.parse::<i64>().expect("unable to parse user ids")))
         .collect();
 
     let admin_provider = Arc::new(MockAdminProvider::new(admin_ids));
-    let slots_factory = Arc::new(Mon2ThuAndFriFixedSlotsFactory::new(3, 2, Duration::minutes(20)));
-    let deadline_policy = Arc::new(StandardDeadlinePolicy::default());
+    let slots_factory = Arc::new(Mon2ThuAndFriFixedSlotsFactory::new(
+        3,
+        2,
+        Duration::minutes(20),
+    ));
+    let deadline_policy = Arc::new(StandardDeadlinePolicy);
     let working_hours_policy = Arc::new(Mon2ThuAndFriWithLunchWorkingHoursPolicy::new(
         ClosedRange {
             start: NaiveTime::from_hms_opt(10, 0, 0).unwrap(),

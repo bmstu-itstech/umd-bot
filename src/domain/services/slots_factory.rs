@@ -14,21 +14,24 @@ pub trait SlotsFactory: Send + Sync {
     ) -> Result<Vec<Slot>, Error>;
 }
 
-/// Теоретически, выделяя создание слота в абстракцию, можно добиться создания слотов разного
-/// размера и продолжительностью согласно рабочей политике.
+// Теоретически, выделяя создание слота в абстракцию, можно добиться создания слотов разного
+// размера и продолжительностью согласно рабочей политике.
 
 /// FixedSlotsFactory создаёт слоты фиксированного размера и продолжительности.
+#[allow(dead_code)]
 pub struct FixedSlotsFactory {
     max_size: usize,
     duration: Duration,
 }
 
+#[allow(dead_code)]
 impl FixedSlotsFactory {
     pub fn new(max_size: usize, duration: Duration) -> Self {
         Self { max_size, duration }
     }
 }
 
+#[allow(dead_code)]
 impl SlotsFactory for FixedSlotsFactory {
     fn create(&self, start: DateTime<Utc>, services: Vec<Service>) -> Result<Slot, Error> {
         Slot::empty(
@@ -85,7 +88,11 @@ pub struct Mon2ThuAndFriFixedSlotsFactory {
 
 impl Mon2ThuAndFriFixedSlotsFactory {
     pub fn new(weekday_max_size: usize, friday_max_size: usize, duration: Duration) -> Self {
-        Self { weekday_max_size, friday_max_size, duration }
+        Self {
+            weekday_max_size,
+            friday_max_size,
+            duration,
+        }
     }
 }
 
