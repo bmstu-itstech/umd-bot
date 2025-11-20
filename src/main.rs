@@ -43,7 +43,7 @@ async fn main() {
 
     let admin_provider = Arc::new(MockAdminProvider::new(admin_ids));
     let slots_factory = Arc::new(Mon2ThuAndFriFixedSlotsFactory::new(
-        3,
+        2,
         2,
         Duration::minutes(20),
     ));
