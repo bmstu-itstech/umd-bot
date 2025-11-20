@@ -1,0 +1,20 @@
+services:
+  bot:
+    container_name: umd-bot
+    build: .
+    environment:
+      ADMIN_IDS: ${ADMIN_IDS:-}
+      DATABASE_URI: $DATABASE_URI
+      RUST_LOG: ${RUST_LOG:-info}
+      TELOXIDE_TOKEN: $TELOXIDE_TOKEN
+
+  migrate:
+    image: migrate/migrate
+    container_name: umd-migrate
+    volumes:
+      - ./migrations:/migrations
+    command: [
+      "-path", "/migrations",
+      "-database", "$DATABASE_URI",
+      "up",
+    ]
