@@ -15,16 +15,17 @@ jobs:
       - name: Deploy
         uses: appleboy/ssh-action@v1.0.3
         env:
+          ADMIN_IDS: ${{ vars.ADMIN_IDS }}
           DATABASE_URI: ${{ secrets.DATABASE_URI }}
           TELOXIDE_TOKEN: ${{ secrets.TELOXIDE_TOKEN }}
           RUST_LOG: ${{ vars.RUST_LOG }}
-          ADMIN_IDS: ${{ vars.ADMIN_IDS }}
         with:
           host: ${{ vars.SSH_HOST }}
           port: ${{ vars.SSH_PORT }}
           username: ${{ vars.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script_stop: true
+          envs: ADMIN_IDS, DATABASE_URI, TELOXIDE_TOKEN, RUST_LOG
           script: |
             cd ${{ vars.PROJECT_DIR }}
             git stash
