@@ -2,6 +2,7 @@ services:
   bot:
     container_name: umd-bot
     build: .
+    network_mode: host
     environment:
       ADMIN_IDS: ${ADMIN_IDS:-}
       DATABASE_URI: $DATABASE_URI
