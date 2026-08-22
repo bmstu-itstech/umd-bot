@@ -19,6 +19,7 @@ jobs:
           ADMIN_IDS: ${{ vars.ADMIN_IDS }}
           DATABASE_URI: ${{ secrets.DATABASE_URI }}
           TELOXIDE_TOKEN: ${{ secrets.TELOXIDE_TOKEN }}
+          TELOXIDE_PROXY: ${{ secrets.TELOXIDE_PROXY }}
           RUST_LOG: ${{ vars.RUST_LOG }}
         with:
           host: ${{ vars.SSH_HOST }}
@@ -26,7 +27,7 @@ jobs:
           username: ${{ vars.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script_stop: true
-          envs: ADMIN_IDS, DATABASE_URI, TELOXIDE_TOKEN, RUST_LOG
+          envs: ADMIN_IDS, DATABASE_URI, TELOXIDE_TOKEN, TELOXIDE_PROXY, RUST_LOG
           script: |
             cd ${{ vars.PROJECT_DIR }}
             git stash
@@ -34,3 +35,4 @@ jobs:
             git pull origin main
             docker compose -f docker-compose.ci.yaml run --rm migrate
             docker compose -f docker-compose.ci.yaml up --build -d bot
+            docker system prune -f
